@@ -3,7 +3,8 @@ import { requireAuthUser } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 
-export const MENU_DASBOR: Array<{ label: string; href: string }> = [
+// Named export selain default/metadata dilarang Next 16 di layout — konstanta lokal.
+const MENU_DASBOR: Array<{ label: string; href: string }> = [
   { label: "Ringkasan", href: "/dasbor" },
   { label: "Tulis Artikel", href: "/dasbor/tulis" },
   { label: "Tulisan Saya", href: "/dasbor/tulisan-saya" },

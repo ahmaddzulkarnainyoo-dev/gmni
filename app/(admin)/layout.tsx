@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { requirePermission } from "@/lib/session";
+import { requireRole } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 
-export const MENU_ADMIN: Array<{
+// Named export selain default/metadata dilarang Next 16 di layout — konstanta lokal.
+const MENU_ADMIN: Array<{
   grup: string;
   item: Array<{ label: string; href: string }>;
 }> = [
@@ -38,17 +39,9 @@ export const MENU_ADMIN: Array<{
 export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  // Area admin hanya untuk Super Admin & Editor (punya minimal satu izin redaksi/organisasi).
-  await requirePermission(
-    "artikel.publish",
-    "role.kelola",
-    "halaman_statis.edit",
-    "pengguna.undang",
-    "pengguna.suspend",
-    "laporan.tinjau",
-    "audit_log.lihat",
-    "leaderboard.override",
-  );
+  // Gate role (Fase 2): /admin/* hanya untuk Super Admin & Editor (blueprint 5.2).
+  // Check permission di masing-masing halaman tetap dipertahankan (defense-in-depth).
+  await requireRole("Super Admin", "Editor");
 
   return (
     <div className="flex min-h-screen flex-col">

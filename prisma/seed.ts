@@ -382,6 +382,34 @@ async function seedSuperAdmin() {
   const role = await prisma.role.findUnique({ where: { nama: "Super Admin" } });
   if (!role) throw new Error("Role Super Admin belum ada saat seed user.");
 
+  // Pembersihan migrasi Fase 2: email seed berubah dari admin@marhaen.com ke
+  // admin@infomarhaen.or.id. Akun seed lama di-suspend & username default
+  // (mis. "superadmin") dibebaskan agar tidak bentrok dengan akun seed baru.
+  // Idempoten — hanya aktif bila email seed berbeda dari email legacy.
+  const LEGACY_SEED_EMAIL = "admin@marhaen.com";
+  if (email !== LEGACY_SEED_EMAIL) {
+    const legacy = await prisma.user.findUnique({
+      where: { email: LEGACY_SEED_EMAIL },
+    });
+    if (legacy) {
+      if (legacy.statusAkun === "AKTIF") {
+        await prisma.user.update({
+          where: { id: legacy.id },
+          data: { statusAkun: "SUSPEND" },
+        });
+        console.log(`  ⚠ Akun seed lama ${LEGACY_SEED_EMAIL} di-suspend (digantikan ${email}).`);
+      }
+      if (legacy.username === username) {
+        const usernameLegacy = `${username}.legacy`;
+        await prisma.user.update({
+          where: { id: legacy.id },
+          data: { username: usernameLegacy },
+        });
+        console.log(`  ⚠ Username "${username}" dipindahkan ke "${usernameLegacy}" agar dipakai akun seed baru.`);
+      }
+    }
+  }
+
   const passwordHash = await hash(password, 12);
 
   const user = await prisma.user.upsert({

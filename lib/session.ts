@@ -48,3 +48,15 @@ export async function requirePermission(...kode: string[]): Promise<SessionUser>
   if (!punya) redirect("/");
   return user;
 }
+
+/**
+ * Memaksa login + role tertentu (berbasis nama role bawaan, blueprint 5.2).
+ * Contoh: requireRole("Super Admin", "Editor") untuk area /admin.
+ * - belum login        → redirect ke /login
+ * - role tak diizinkan → redirect ke /
+ */
+export async function requireRole(...namaRole: string[]): Promise<SessionUser> {
+  const user = await requireAuthUser();
+  if (!user.roleNama || !namaRole.includes(user.roleNama)) redirect("/");
+  return user;
+}
