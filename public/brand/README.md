@@ -3,14 +3,19 @@
 Folder ini adalah lokasi resmi aset branding (blueprint Bagian 2.3).
 
 ## Status aset saat ini
-- `logo.jpg` (logo resmi GMNI) **belum tersedia** — akan diletakkan di sini oleh pemilik proyek.
-- Sementara, UI memakai emblem SVG placeholder di `components/brand/LogoGMNI.tsx`.
+- `public/logo.png` — logo resmi GMNI (1456×1440, RGBA) **tersedia** diletakkan
+  oleh pemilik proyek di root folder `public/`.
+- Header & footer situs memakai `public/logo.png` langsung.
+- Favicon sudah turunkan dari logo → `app/favicon.ico` (multi-resolusi,
+  embedded PNG). Regenerate setelah logo berubah:
+  `node scripts/generate-favicon.mjs`.
+- Emblem SVG placeholder di `components/brand/LogoGMNI.tsx` masih dipakai
+  untuk aset kecil (auth/dasbor/admin, badge, watermark, 404).
 
-## Saat `logo.jpg` sudah tersedia
-Turunkan menjadi (jalankan secara manual / script `scripts/generate-assets.*`):
-1. **Favicon multi-resolusi** → `app/icon.svg` / `app/icon.png` + `app/apple-icon.png`.
-2. **Logo versi putih** → untuk latar gelap (header hitam, footer, placeholder gambar).
-3. **Versi ikon saja** → avatar default kader & watermark (halaman 404, kategori Marhaenisme).
+## Sumber & turunan
+1. **Favicon multi-resolusi** → `app/favicon.ico` (via `scripts/generate-favicon.mjs`).
+2. **Logo versi putih** → untuk latar gelap (header hitam, footer, placeholder gambar) — menyusul.
+3. **Versi ikon saja** → avatar default kader & watermark (halaman 404, kategori Marhaenisme) — menyusul.
 
 ## Catatan kontras
 Merah `#E53935`, Putih kusam `#FAF9F5`, Hitam `#141414` — lihat `app/globals.css`.

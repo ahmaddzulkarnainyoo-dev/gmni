@@ -8,7 +8,6 @@ import {
   SITE_TAGLINE,
 } from "@/lib/site";
 import { cn } from "@/lib/utils";
-import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { DividerTrisila } from "@/components/ui/DividerTrisila";
 
 function TanggalHariIni() {
@@ -83,7 +82,14 @@ export async function SiteHeader() {
       <div className="border-b-4 border-gmnimerah-500 bg-kertas-100">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
           <Link href="/" className="flex items-center gap-3" aria-label={SITE_NAME}>
-            <LogoGMNI className="h-12 w-12" />
+            {/* Logo resmi GMNI (public/logo.png) */}
+            <img
+              src="/logo.png"
+              alt={SITE_NAME}
+              width={1456}
+              height={1440}
+              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+            />
             <div className="leading-none">
               <p className="font-serif text-4xl font-extrabold tracking-tight text-hitam-900 sm:text-5xl">
                 info{" "}

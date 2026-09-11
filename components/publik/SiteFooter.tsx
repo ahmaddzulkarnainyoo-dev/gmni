@@ -6,7 +6,6 @@ import {
   SITE_NAME,
   SITE_TAGLINE,
 } from "@/lib/site";
-import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { DividerTrisila } from "@/components/ui/DividerTrisila";
 
 export function SiteFooter() {
@@ -17,7 +16,14 @@ export function SiteFooter() {
         {/* Brand */}
         <div className="space-y-4">
           <div className="flex items-center gap-3">
-            <LogoGMNI warne="putih" className="h-10 w-10" />
+            {/* Logo resmi GMNI (public/logo.png) */}
+            <img
+              src="/logo.png"
+              alt={SITE_NAME}
+              width={1456}
+              height={1440}
+              className="h-10 w-10 object-contain"
+            />
             <p className="font-serif text-2xl font-extrabold text-white">
               info <span className="italic text-gmnimerah-400">Marhaen</span>
             </p>

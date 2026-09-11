@@ -53,9 +53,11 @@ npm run dev                   # http://localhost:3000
 > **Catatan mesin dengan `node_modules` di FAT32** (contoh drive `D:`):
 > Turbopack (bundler default Next 16) tidak kompatibel dengan FAT32 karena
 > membutuhkan symlink/junction. Proyek ini memakai `--webpack` dan
-> `distDir: ".next-webpack"` (lihat `next.config.ts`). Sebelum build pertama,
-> jalankan sekali: `node scripts/patch-next-fat32.mjs` untuk menambal handling
-> `EISDIR` pada `readlink` (idempoten).
+> `distDir: ".next-webpack"` **solo lokal** — di Vercel (`VERCEL=1`)
+> `distDir` menyok `undefined` sehingga output menyampa ke `.next`
+> (default, lihat `next.config.ts`). Sebelum build lokal pertama,
+> jalankan sekali: `node scripts/patch-next-fat32.mjs` untuk menambal
+> handling `EISDIR` pada `readlink` (idempoten).
 
 ## Struktur Folder
 
