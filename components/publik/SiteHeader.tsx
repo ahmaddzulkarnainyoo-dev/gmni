@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import {
   KATEGORI_BERITA,
   NAV_UTAMA,
@@ -19,7 +21,9 @@ function TanggalHariIni() {
   return <time className="uppercase">{tanggal}</time>;
 }
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const sess = await getServerSession(authOptions);
+  const user = sess?.user;
   return (
     <header className="sticky top-0 z-40 w-full">
       {/* Kanal atas — hitam */}
@@ -32,18 +36,45 @@ export function SiteHeader() {
             Suara rakyat kecil — oposisi kebijakan
           </span>
           <nav aria-label="Akun" className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="text-kertas-200 transition-colors hover:text-gmnimerah-400"
-            >
-              Masuk
-            </Link>
-            <Link
-              href="/daftar"
-              className="bg-gmnimerah-500 px-2 py-0.5 text-white transition-colors hover:bg-gmnimerah-400"
-            >
-              Registrasi Kader
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/dasbor"
+                  className="text-kertas-200 transition-colors hover:text-gmnimerah-400"
+                >
+                  Dasbor
+                </Link>
+                {user.roleNama && (
+                  <Link
+                    href="/admin"
+                    className="border border-gmnimerah-500 px-2 py-0.5 text-gmnimerah-400 transition-colors hover:bg-gmnimerah-500 hover:text-white"
+                  >
+                    Admin
+                  </Link>
+                )}
+                <Link
+                  href="/api/auth/signout?callbackUrl=/login"
+                  className="bg-gmnimerah-500 px-2 py-0.5 text-white transition-colors hover:bg-gmnimerah-400"
+                >
+                  Keluar
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="text-kertas-200 transition-colors hover:text-gmnimerah-400"
+                >
+                  Masuk
+                </Link>
+                <Link
+                  href="/daftar"
+                  className="bg-gmnimerah-500 px-2 py-0.5 text-white transition-colors hover:bg-gmnimerah-400"
+                >
+                  Registrasi Kader
+                </Link>
+              </>
+            )}
           </nav>
         </div>
       </div>
@@ -74,8 +105,8 @@ export function SiteHeader() {
             Terbaru
           </span>
           <p className="truncate font-mono text-[12px] uppercase tracking-wide">
-            Fase 0 — Fondasi design system GMNI telah diinisialisasi.
-            Konter berita akan menyala saat edisi pertama terbit.
+            Fase 1 aktif — portal dinamis terkoneksi database. Tulisan
+            kader mengalir menuju edisi perdana info Marhaen.
           </p>
         </div>
       </div>

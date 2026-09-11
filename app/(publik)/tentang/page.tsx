@@ -1,5 +1,21 @@
-import { Pembangunan } from "@/components/ui/Pembangunan";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { HalamanStatisView } from "@/components/publik/HalamanStatisView";
+import { deskripsiDariHalaman } from "@/lib/halaman";
 
-export default function Page() {
-  return <Pembangunan judul="Tentang" deskripsi="Profil GMNI, sejarah kelahiran dan fusi. Konten editable admin via /admin/halaman." />;
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await prisma.halamanStatis.findUnique({ where: { slug: "tentang" } });
+  return {
+    title: h?.judul ?? "Tentang",
+    description: h ? deskripsiDariHalaman(h) : undefined,
+  };
+}
+
+export default async function HalamanTentang() {
+  const h = await prisma.halamanStatis.findUnique({ where: { slug: "tentang" } });
+  if (!h) notFound();
+  return <HalamanStatisView judul={h.judul} konten={h.konten} />;
 }

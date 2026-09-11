@@ -1,5 +1,16 @@
-import { Pembangunan } from "@/components/ui/Pembangunan";
+import { Suspense } from "react";
+import type { Metadata } from "next";
+import { LoginForm } from "@/components/auth/LoginForm";
 
-export default function Page() {
-  return <Pembangunan judul="Masuk" deskripsi="Login kader via NextAuth/Auth.js. Fase 1." />;
+export const metadata: Metadata = {
+  title: "Masuk",
+  description: "Masuk ke dasbor kader info Marhaen.",
+};
+
+export default function HalamanMasuk() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
 }

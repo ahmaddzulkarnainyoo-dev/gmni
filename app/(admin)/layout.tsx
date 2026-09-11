@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requirePermission } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 
@@ -34,9 +35,21 @@ export const MENU_ADMIN: Array<{
   },
 ];
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Area admin hanya untuk Super Admin & Editor (punya minimal satu izin redaksi/organisasi).
+  await requirePermission(
+    "artikel.publish",
+    "role.kelola",
+    "halaman_statis.edit",
+    "pengguna.undang",
+    "pengguna.suspend",
+    "laporan.tinjau",
+    "audit_log.lihat",
+    "leaderboard.override",
+  );
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="bg-hitam-900 text-white">
@@ -54,6 +67,12 @@ export default function AdminLayout({
             className="ml-auto font-mono text-[11px] uppercase tracking-widest text-kertas-300 hover:text-gmnimerah-400"
           >
             Lihat Situs
+          </Link>
+          <Link
+            href="/api/auth/signout?callbackUrl=/login"
+            className="font-mono text-[11px] uppercase tracking-widest text-kertas-300 hover:text-gmnimerah-400"
+          >
+            Keluar
           </Link>
         </div>
       </header>

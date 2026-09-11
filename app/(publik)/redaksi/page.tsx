@@ -1,5 +1,21 @@
-import { Pembangunan } from "@/components/ui/Pembangunan";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { HalamanStatisView } from "@/components/publik/HalamanStatisView";
+import { deskripsiDariHalaman } from "@/lib/halaman";
 
-export default function Page() {
-  return <Pembangunan judul="Redaksi" deskripsi="Struktur redaksi dan susunan pengurus periode berjalan. Diisi manual oleh admin." />;
+export const dynamic = "force-dynamic";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const h = await prisma.halamanStatis.findUnique({ where: { slug: "redaksi" } });
+  return {
+    title: h?.judul ?? "Redaksi",
+    description: h ? deskripsiDariHalaman(h) : undefined,
+  };
+}
+
+export default async function HalamanRedaksi() {
+  const h = await prisma.halamanStatis.findUnique({ where: { slug: "redaksi" } });
+  if (!h) notFound();
+  return <HalamanStatisView judul={h.judul} konten={h.konten} />;
 }

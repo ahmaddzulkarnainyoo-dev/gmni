@@ -42,11 +42,20 @@ npm run dev                   # http://localhost:3000
 
 | Script | Fungsi |
 |---|---|
-| `npm run dev` / `build` / `start` / `lint` | Standar Next.js |
+| `npm run dev` / `start` | Next.js dev (webpack) / production |
+| `npm run build` | `next build --webpack` (fail-safe FAT32/Symlink) |
+| `npm run lint` | ESLint |
 | `npm run typecheck` | `tsc --noEmit` |
 | `npm run db:migrate` / `db:deploy` | Migrasi dev / produksi |
 | `npm run db:seed` | Seed idempoten (RBAC, kategori, halaman, Super Admin dari env) |
 | `npm run db:generate` / `db:studio` | Generate client / Prisma Studio |
+
+> **Catatan mesin dengan `node_modules` di FAT32** (contoh drive `D:`):
+> Turbopack (bundler default Next 16) tidak kompatibel dengan FAT32 karena
+> membutuhkan symlink/junction. Proyek ini memakai `--webpack` dan
+> `distDir: ".next-webpack"` (lihat `next.config.ts`). Sebelum build pertama,
+> jalankan sekali: `node scripts/patch-next-fat32.mjs` untuk menambal handling
+> `EISDIR` pada `readlink` (idempoten).
 
 ## Struktur Folder
 

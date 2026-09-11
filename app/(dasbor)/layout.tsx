@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { requireAuthUser } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 
@@ -12,9 +13,12 @@ export const MENU_DASBOR: Array<{ label: string; href: string }> = [
   { label: "Pengaturan", href: "/dasbor/pengaturan" },
 ];
 
-export default function DasborLayout({
+export default async function DasborLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // Hanya kader terverifikasi yang bisa mengakses dasbor.
+  const user = await requireAuthUser();
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="bg-hitam-900 text-white">
@@ -52,6 +56,15 @@ export default function DasborLayout({
                 {m.label}
               </Link>
             ))}
+            <span className="mt-4 border-t border-hitam-200 pt-3 font-mono text-[11px] uppercase tracking-widest text-hitam-400">
+              Masuk sebagai {user.name}
+            </span>
+            <Link
+              href="/api/auth/signout?callbackUrl=/login"
+              className="mt-2 border-l-2 border-transparent px-3 py-2 font-sans text-sm font-medium text-gmnimerah-600 transition-colors hover:border-gmnimerah-500 hover:bg-white"
+            >
+              Keluar
+            </Link>
           </nav>
         </aside>
         <div className="min-w-0 flex-1">{children}</div>

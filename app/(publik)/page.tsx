@@ -4,10 +4,16 @@ import { DividerTrisila } from "@/components/ui/DividerTrisila";
 import { KartuArtikel } from "@/components/ui/KartuArtikel";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 import { Tombol } from "@/components/ui/Tombol";
-import { KATEGORI_BERITA } from "@/lib/site";
+import { ambilTerbitTerbaru, bylineArtikel, fmtTanggal } from "@/lib/articles";
 
-/** Kerangka desain halaman depan; Fase 1 menggantinya dengan data Prisma. */
-export default function Beranda() {
+export const dynamic = "force-dynamic";
+
+export default async function Beranda() {
+  const terbaru = await ambilTerbitTerbaru(9);
+  const unggulan = terbaru[0] ?? null;
+  const lainnya = terbaru.slice(1, 7);
+  const marhaenPinned =
+    terbaru.find((a) => a.kategori.slug === "marhaenisme") ?? null;
   return (
     <>
       <section className="border-b-4 border-hitam-900 bg-kertas-150">
@@ -48,7 +54,7 @@ export default function Beranda() {
           <div>
             <KickerLabel>Terbitan Terkini</KickerLabel>
             <h2 className="mt-1 font-serif text-2xl font-bold text-hitam-900 md:text-3xl">
-              Edisi Pembuka
+              Edisi Terbaru
             </h2>
           </div>
           <Link
@@ -58,26 +64,45 @@ export default function Beranda() {
             Lihat Semua →
           </Link>
         </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-3">
-          <KartuArtikel
-            varian="besar"
-            judul="Marhaen Hari Ini: Ketika Rakyat Pemilik Sawah Justru Tak Punya Beras"
-            ringkasan="Edisi pembuka menegaskan posisi editorial info Marhaen. Fase 1 mengisi kartu ini dari database artikel terbit."
-            kategori={{ nama: "Marhaenisme", slug: "marhaenisme" }}
-            tanggal="Edisi 1"
-            penulis="Redaksi"
-            className="md:col-span-2 md:row-span-2"
-          />
-          {KATEGORI_BERITA.map((k) => (
-            <KartuArtikel
-              key={k.slug}
-              judul={`Kanal ${k.label} — tulisan pertama menyusul`}
-              kategori={{ nama: k.label, slug: k.slug }}
-              tanggal="Segera"
-              penulis="Kader"
-            />
-          ))}
-        </div>
+
+        {terbaru.length === 0 ? (
+          <div className="mt-8 border-4 border-dashed border-hitam-200 bg-kertas-100 p-10 text-center">
+            <p className="font-serif text-xl font-bold text-hitam-900">
+              Belum ada terbitan.
+            </p>
+            <p className="mt-2 text-sm text-hitam-500">
+              Redaksi sedang menyiapkan edisi perdana. Kembali lagi segera.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-6 grid gap-6 md:grid-cols-3">
+            {unggulan && (
+              <KartuArtikel
+                varian="besar"
+                judul={unggulan.judul}
+                ringkasan={unggulan.ringkasan ?? undefined}
+                kategori={{ nama: unggulan.kategori.nama, slug: unggulan.kategori.slug }}
+                tanggal={fmtTanggal(unggulan.tanggalTerbit)}
+                penulis={bylineArtikel(unggulan).nama}
+                gambar={unggulan.gambarUtama}
+                slug={unggulan.slug}
+                className="md:col-span-2 md:row-span-2"
+              />
+            )}
+            {lainnya.map((a) => (
+              <KartuArtikel
+                key={a.id}
+                judul={a.judul}
+                ringkasan={a.ringkasan ?? undefined}
+                kategori={{ nama: a.kategori.nama, slug: a.kategori.slug }}
+                tanggal={fmtTanggal(a.tanggalTerbit)}
+                penulis={bylineArtikel(a).nama}
+                gambar={a.gambarUtama}
+                slug={a.slug}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mx-auto mt-14 max-w-6xl px-4">
