@@ -1,0 +1,242 @@
+// ============================================================
+// info Marhaen — Skema Database (Fase 0 · Fondasi)
+// Sumber kebenaran: blueprint.md Bagian 7.
+//
+// CATATAN FASERING:
+//  - Fase 0/1 : User, Role, Permission, Artikel, Kategori, Tag,
+//               HalamanStatis, AuditLog (+ enums alur editorial).
+//  - Fase 2+  : Komentar, PesanLangsung, Leaderboard, Pencapaian,
+//               LangganNewsletter, SlotIklanDonasi (ditambah via migrasi).
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// ENUM
+// ============================================================
+
+/// Alur editorial (blueprint 6.1): state machine artikel.
+enum StatusArtikel {
+  DRAFT /// Draft oleh penulis
+  DIAJUKAN /// Submitted — masuk antrian redaksi
+  SEDANG_DITINJAU /// Sedang ditinjau editor
+  DIMINTA_REVISI /// Dikembalikan ke penulis untuk revisi
+  DISETUJUI /// Disetujui, menunggu terbit/jadwal
+  TERBIT /// Published
+  DITOLAK /// Ditolak (catatan_revisi wajib berisi alasan)
+  DIARSIPKAN /// Archived — disembunyikan tanpa dihapus (SEO historis)
+}
+
+/// Visibilitas nama penulis per artikel (blueprint 6.2).
+enum VisibilitasPenulis {
+  ASLI /// Tampil & tertaut ke /profil/[username]
+  SAMARAN /// Nama tampilan kustom, TIDAK tertaut ke profil
+  REDAKSI /// Byline generik "Redaksi info Marhaen"
+}
+
+/// Status akun kader (blueprint 7.1).
+enum StatusAkun {
+  AKTIF
+  SUSPEND
+}
+
+// ============================================================
+// 7.1 USER — kader terverifikasi
+// ============================================================
+
+model User {
+  id                String   @id @default(cuid())
+  namaLengkap       String
+  username          String   @unique
+  email             String   @unique
+  nomorWa           String?  @unique /// terverifikasi OTP (Fase 2)
+  passwordHash      String
+  fotoProfil        String? /// URL ke object storage (Vercel Blob/Cloudinary)
+  bio               String? @db.Text
+  daerahAsal        String? /// nama daerah/DPC asal
+  roleId            String
+  role              Role     @relation(fields: [roleId], references: [id])
+  statusAkun        StatusAkun @default(AKTIF)
+  profilTersembunyi Boolean  @default(false) /// toggle sembunyikan dari cari & DM (6.2)
+  diundangOlehId    String?
+  diundangOleh      User?    @relation("RelasiUndangan", fields: [diundangOlehId], references: [id])
+  undangan          User[]   @relation("RelasiUndangan")
+  tokenUndangan     String?  @unique /// invite token untuk /daftar
+  tanggalBergabung  DateTime @default(now())
+  terakhirAktif     DateTime?
+
+  artikel           Artikel[]  @relation("ArtikelPenulis")
+  artikelDisetujui  Artikel[]  @relation("ArtikelDisetujuiOleh")
+  roleDibuat        Role[]     @relation("RoleDibuatOleh")
+  halamanStatis     HalamanStatis[] @relation("HalamanDiubahOleh")
+  auditLogs         AuditLog[]
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([roleId])
+  @@index([tanggalBergabung])
+}
+
+// ============================================================
+// 7.2 ROLE & PERMISSION — RBAC tidak hardcoded (Bagian 5)
+// ============================================================
+
+model Role {
+  id            String  @id @default(cuid())
+  nama          String  @unique
+  deskripsi     String?
+  dibuatOlehId  String?
+  dibuatOleh    User?   @relation("RoleDibuatOleh", fields: [dibuatOlehId], references: [id])
+  /// Role bawaan (Super Admin, Editor, Kontributor) tidak bisa dihapus —
+  /// hanya bisa diduplikasi menjadi role baru (blueprint 5.2).
+  isSystemDefault Boolean @default(false)
+
+  permissions  RolePermission[]
+  users        User[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Permission {
+  id          String  @id @default(cuid())
+  kode        String  @unique /// contoh: "artikel.publish", "role.kelola" (blueprint 5.3)
+  deskripsi   String?
+  roles       RolePermission[]
+}
+
+/// Pivot many-to-many Role ↔ Permission (blueprint 7.2).
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+}
+
+// ============================================================
+// 7.4 KATEGORI & TAG
+// ============================================================
+
+model Kategori {
+  id          String   @id @default(cuid())
+  nama        String
+  slug        String   @unique
+  deskripsi   String?  @db.Text
+  /// Kategori tetap "Marhaenisme" ditandai agar selalu tampil di atas.
+  isTetap     Boolean  @default(false)
+  artikel     Artikel[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Tag {
+  id      String  @id @default(cuid())
+  nama    String
+  slug    String  @unique
+  artikel ArtikelTag[]
+}
+
+/// Pivot many-to-many Artikel ↔ Tag (blueprint 7.3: tag[]).
+model ArtikelTag {
+  artikelId String
+  tagId     String
+  artikel   Artikel @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([artikelId, tagId])
+}
+
+// ============================================================
+// 7.3 ARTIKEL — mesin redaksi
+// ============================================================
+
+model Artikel {
+  id                        String            @id @default(cuid())
+  judul                     String
+  slug                      String            @unique
+  konten                    String            @db.Text /// rich text/HTML hasil editor
+  ringkasan                 String?           @db.Text
+  gambarUtama               String?           @db.Text /// URL object storage
+  kategoriId                String
+  kategori                  Kategori          @relation(fields: [kategoriId], references: [id])
+  tags                      ArtikelTag[]
+  penulisId                 String
+  penulis                   User              @relation("ArtikelPenulis", fields: [penulisId], references: [id])
+  status                    StatusArtikel     @default(DRAFT)
+  visibilitasPenulis        VisibilitasPenulis @default(ASLI)
+  /// Dipakai bila visibilitasPenulis = SAMARAN (blueprint 6.2).
+  namaTampilanKustom        String?
+  /// Auto-true bila samaran; artikel ini dikecualikan dari gamifikasi (8.4).
+  dikecualikanDariLeaderboard Boolean           @default(false)
+  /// Artikel pinned (contoh: rubrik Marhaenisme tetap di atas).
+  disematkan                Boolean           @default(false)
+  disetujuiOlehId           String?
+  disetujuiOleh             User?             @relation("ArtikelDisetujuiOleh", fields: [disetujuiOlehId], references: [id])
+  /// Wajib diisi admin saat DIMINTA_REVISI / DITOLAK (blueprint 6.1).
+  catatanRevisi             String?           @db.Text
+  jumlahDilihat             Int               @default(0)
+  jumlahDibagikan           Int               @default(0)
+  jumlahKomentar            Int               @default(0)
+  tanggalDiajukan           DateTime?
+  tanggalTerbit             DateTime?
+  tanggalDijadwalkan        DateTime?
+
+  createdAt                 DateTime          @default(now())
+  updatedAt                 DateTime          @updatedAt
+
+  @@index([kategoriId])
+  @@index([status])
+  @@index([penulisId])
+  @@index([tanggalTerbit])
+  @@index([disematkan])
+}
+
+// ============================================================
+// 7.9 HALAMAN STATIS — konten no-code, editable admin (Bagian 12)
+// ============================================================
+
+model HalamanStatis {
+  id                String   @id @default(cuid())
+  slug              String   @unique /// "tentang", "redaksi", "pedoman-media-siber", dll
+  judul             String
+  konten            String   @db.Text /// rich text, editable via /admin/halaman
+  terakhirDiubahOlehId String?
+  terakhirDiubahOleh   User?  @relation("HalamanDiubahOleh", fields: [terakhirDiubahOlehId], references: [id])
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+// ============================================================
+// 7.8 AUDIT LOG — jejak semua perubahan (Bagian 9.2)
+// ============================================================
+
+model AuditLog {
+  id            String   @id @default(cuid())
+  aktorId       String?
+  aktor         User?    @relation(fields: [aktorId], references: [id])
+  aksi          String   /// contoh: "artikel.update", "role.create"
+  entitasTipe   String   /// "Artikel" | "User" | "Role" | "HalamanStatis" | ...
+  entitasId     String
+  /// Snapshot JSON sebelum/sesudah — transparansi internal & forensik.
+  dataSebelum   Json?
+  dataSesudah   Json?
+  alamatIp      String?
+
+  tanggal       DateTime @default(now())
+
+  @@index([entitasTipe, entitasId])
+  @@index([aktorId])
+  @@index([tanggal])
+}

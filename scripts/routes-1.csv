@@ -1,0 +1,21 @@
+path;judul;deskripsi
+app/(publik)/berita/page.tsx;Berita;Induk kanal berita. Fase 1 menampilkan artikel terbit per kategori.
+app/(publik)/berita/[kategoriSlug]/page.tsx;Kategori Berita;Halaman kategori berita dinamis (politik, ekonomi, hukum, dsb).
+app/(publik)/marhaenisme/page.tsx;Marhaenisme;Rubrik khusus wajib ada: artikel pinned tentang ideologi Marhaenisme dan Trisila.
+app/(publik)/opini/page.tsx;Opini;Suara kader dan rakyat kecil atas keadaan zaman.
+app/(publik)/kaderisasi/page.tsx;Kaderisasi;Agenda dan liputan internal organisasi: PPAB, KTD, KTM, KTP.
+app/(publik)/tokoh/page.tsx;Tokoh;Profil tokoh nasional dan alumni kader GMNI.
+app/(publik)/tentang/page.tsx;Tentang;Profil GMNI, sejarah kelahiran dan fusi. Konten editable admin via /admin/halaman.
+app/(publik)/redaksi/page.tsx;Redaksi;Struktur redaksi dan susunan pengurus periode berjalan. Diisi manual oleh admin.
+app/(publik)/pedoman-media-siber/page.tsx;Pedoman Media Siber;Pedoman Pemberitaan Media Siber, mengacu Dewan Pers.
+app/(publik)/hak-jawab/page.tsx;Hak Jawab;Form pengajuan hak jawab bagi pihak yang merasa dirugikan pemberitaan.
+app/(publik)/kontak-pengaduan/page.tsx;Kontak dan Pengaduan;Form pengaduan resmi serta kontak email dan WhatsApp redaksi.
+app/(publik)/kebijakan-privasi/page.tsx;Kebijakan Privasi;Kepatuhan UU PDP No. 27 Tahun 2022.
+app/(publik)/artikel/[slug]/page.tsx;Artikel;Halaman artikel individual dengan slug bersih dan SEO meta dinamis.
+app/(publik)/kategori/[slug]/page.tsx;Arsip Kategori;Arsip artikel berdasarkan kategori.
+app/(publik)/tag/[slug]/page.tsx;Arsip Tag;Arsip artikel berdasarkan tag.
+app/(publik)/cari/page.tsx;Pencarian;Pencarian situs (PostgreSQL full-text pada tahap awal).
+app/(publik)/leaderboard/page.tsx;Leaderboard;Papan peringkat mingguan. Publik, read-only untuk non-kader.
+app/(auth)/login/page.tsx;Masuk;Login kader via NextAuth/Auth.js. Fase 1.
+app/(auth)/daftar/page.tsx;Registrasi Kader;Pendaftaran hanya aktif lewat tautan undangan admin (invite token).
+app/(auth)/lupa-password/page.tsx;Lupa Kata Sandi;Alur pemulihan kata sandi. Fase 1.

@@ -1,0 +1,21 @@
+path;judul;deskripsi
+app/(dasbor)/dasbor/page.tsx;Dasbor Kader;Ringkasan aktivitas menulis, notifikasi, dan pencapaian.
+app/(dasbor)/dasbor/tulis/page.tsx;Tulis Artikel;Editor artikel baru dengan autosave dan alur draft menuju redaksi.
+app/(dasbor)/dasbor/tulisan-saya/page.tsx;Tulisan Saya;Status semua submission: draft, review, revisi, terbit, ditolak.
+app/(dasbor)/dasbor/pesan/page.tsx;Pesan;Inbox direct message antar kader. Fase 3 (real-time).
+app/(dasbor)/dasbor/notifikasi/page.tsx;Notifikasi;Notifikasi in-app: status artikel, DM baru, kemenangan leaderboard.
+app/(dasbor)/dasbor/pencapaian/page.tsx;Pencapaian;Badge dan history leaderboard pribadi (trophy case permanen).
+app/(dasbor)/dasbor/pengaturan/page.tsx;Pengaturan;Profil, sandi, dan toggle sembunyikan profil dari pencarian dan DM.
+app/(admin)/admin/page.tsx;Admin;Pusat kendali redaksi dan organisasi tanpa developer.
+app/(admin)/admin/redaksi/page.tsx;Antrian Redaksi;Antrian review artikel masuk: setujui, tolak, atau minta revisi.
+app/(admin)/admin/artikel/page.tsx;Kelola Artikel;Edit, jadwalkan, arsipkan, dan hapus seluruh artikel.
+app/(admin)/admin/pengguna/page.tsx;Kelola Pengguna;Kelola akun kader, kirim undangan, suspend.
+app/(admin)/admin/peran/page.tsx;Peran dan Hak Akses;RBAC tanpa kode: buat role, atur permission, duplikasi role bawaan.
+app/(admin)/admin/komentar/page.tsx;Moderasi Komentar;Sembunyikan, hapus, atau pulihkan komentar publik.
+app/(admin)/admin/laporan/page.tsx;Laporan;Tinjau laporan penyalahgunaan DM dan komentar.
+app/(admin)/admin/audit-log/page.tsx;Audit Log;Jejak seluruh perubahan artikel, pengguna, role, dan halaman statis.
+app/(admin)/admin/leaderboard/page.tsx;Kelola Leaderboard;Override pemenang Penulis Terbaik mingguan.
+app/(admin)/admin/halaman/page.tsx;Halaman Statis;Edit konten no-code: Tentang, Redaksi, Pedoman Media Siber, dan lainnya.
+app/(admin)/admin/tampilan/page.tsx;Tampilan dan Branding;Pengaturan tema dan branding dasar.
+app/(admin)/admin/iklan-donasi/page.tsx;Iklan dan Donasi;Kelola slot iklan dan banner dukung perjuangan tanpa developer.
+app/(admin)/admin/pengaturan/page.tsx;Pengaturan Situs;Konfigurasi umum situs.

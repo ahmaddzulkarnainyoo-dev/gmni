@@ -1,0 +1,26 @@
+# ============================================================
+# info Marhaen — PostgreSQL lokal untuk development
+# Jalankan: docker compose up -d
+# Lalu: npm run db:migrate && npm run db:seed
+# ============================================================
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: infomarhaen-pg
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: marhaen
+      POSTGRES_PASSWORD: marhaen_dev
+      POSTGRES_DB: infomarhaen
+    ports:
+      - "5432:5432"
+    volumes:
+      - infomarhaen_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U marhaen -d infomarhaen"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  infomarhaen_pgdata:

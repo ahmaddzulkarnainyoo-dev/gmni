@@ -1,0 +1,74 @@
+@import "tailwindcss";
+
+/* ============================================================
+   info Marhaen — Design Tokens GMNI (blueprint.md Bagian 3)
+   Setiap nilai diturunkan dari LAMBANG GMNI, bukan tren SaaS:
+   - Merah   #E53935 → keberanian militan (aksen & aksi)
+   - Putih kusam    → latar, kesan media cetak yang lugas
+   - Hitam   #141414 → teks/header, keteguhan tekad kader
+   - Bintang        → badge pencapaian kader
+   - Banteng        → motif watermark/maskot (halaman marhaenisme, 404)
+   - Trisila        → divider tiga garis miring (section break)
+   ============================================================ */
+
+@theme {
+  /* MERAH — aksen utama */
+  --color-gmnimerah-50: #fdecec;
+  --color-gmnimerah-100: #fad6d5;
+  --color-gmnimerah-200: #f6abaa;
+  --color-gmnimerah-300: #ef7d7b;
+  --color-gmnimerah-400: #e95452;
+  --color-gmnimerah-500: #e53935;
+  --color-gmnimerah-600: #c62828;
+  --color-gmnimerah-700: #b71c1c;
+  --color-gmnimerah-800: #8e1414;
+  --color-gmnimerah-900: #5e0b0b;
+
+  /* PUTIH KUSAM — latar media cetak (dominant, bukan gelap) */
+  --color-kertas-50: #fefefd;
+  --color-kertas-100: #fdfcfa;
+  --color-kertas-150: #faf9f5;
+  --color-kertas-200: #f3f0e8;
+  --color-kertas-300: #e8e2d3;
+
+  /* HITAM — teks & header (kontras tinggi, aksesibilitas) */
+  --color-hitam-900: #141414;
+  --color-hitam-800: #1f1f1f;
+  --color-hitam-700: #2c2c2c;
+  --color-hitam-600: #3d3d3d;
+  --color-hitam-500: #4a4a4a;
+  --color-hitam-400: #6e6e6e;
+  --color-hitam-300: #999999;
+  --color-hitam-200: #c8c8c8;
+  --color-hitam-100: #e6e6e6;
+  --color-hitam-50: #f4f4f4;
+}
+
+@theme inline {
+  /* Tipografi jurnalistik: serif tegas utk judul, sans utk UI/body,
+     mono utk label/kicker ala mesin ketik redaksi */
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-lora), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-plexmono), ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+:root {
+  --background: #faf9f5;
+  --foreground: #141414;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  ::selection {
+    background-color: var(--color-gmnimerah-500);
+    color: #ffffff;
+  }
+}
