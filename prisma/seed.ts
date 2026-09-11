@@ -5,10 +5,12 @@
  * dan 12 (konten seed).
  *
  * CATATAN KONTEN:
- * Teks raw lengkap GMNI/Marhaenisme akan disuntikkan pada tahap
- * berikutnya. Saat ini halaman statis berisi kerangka resmi
- * (Trisila, sistem kaderisasi, struktur Pedoman Media Siber)
- * dengan penanda [RAW TEXT MENYUSUL].
+ * Teks raw resmi GMNI/Marhaenisme (identitas & sejarah fusi, makna
+ * lambang, pemahaman Marhaenisme & Trisila, sistem kaderisasi
+ * PPAB–KTP, dan tokoh kader nasional) sudah disuntikkan ke halaman
+ * tentang, kaderisasi, tokoh, dan marhaenisme. Halaman Redaksi &
+ * legal (Pedoman Media Siber, Hak Jawab, Kontak, Kebijakan Privasi)
+ * tetap menunggu input admin/pemilik proyek (blueprint 12).
  *
  * Seed ini IDEMPOTEN — aman dijalankan berulang (upsert).
  * ============================================================
@@ -145,7 +147,7 @@ const TAG = [
 
 // ============================================================
 // HALAMAN STATIS — konten no-code, editable admin (/admin/halaman).
-// KERANGKA -- teks raw resmi menyusul dari pemilik proyek.
+// KONTEN RESMI -- teks raw GMNI/Marhaenisme sudah disuntikkan (blueprint 12).
 // ============================================================
 const HALAMAN: Array<{ slug: string; judul: string; konten: string }> = [
   {
@@ -153,11 +155,36 @@ const HALAMAN: Array<{ slug: string; judul: string; konten: string }> = [
     judul: "Tentang GMNI",
     konten: `
 <h2>Identitas</h2>
-<p>[RAW TEXT MENYUSUL] Identitas dasar, tujuan, dan azas Gerakan Mahasiswa Nasional Indonesia.</p>
-<h2>Sejarah</h2>
-<p>[RAW TEXT MENYUSUL] Sejarah kelahiran dan fusi: tabel tiga organisasi yang melebur menjadi GMNI.</p>
+<p><strong>Gerakan Mahasiswa Nasional Indonesia (GMNI)</strong> adalah organisasi kemahasiswaan ekstrakampus yang lahir sebagai manifestasi perjuangan rakyat kecil menuju Indonesia yang berdaulat, adil, dan makmur.</p>
+<ul>
+  <li><strong>Nama Resmi:</strong> Gerakan Mahasiswa Nasional Indonesia (GMNI)</li>
+  <li><strong>Tanggal Kelahiran:</strong> 23 Maret 1954 (Kongres I di Surabaya)</li>
+  <li><strong>Azas:</strong> Marhaenisme (ajaran Bung Karno)</li>
+  <li><strong>Status:</strong> Organisasi kemahasiswaan ekstrakampus</li>
+</ul>
+<h2>Sejarah Kelahiran &amp; Fusi</h2>
+<p>GMNI lahir dari fusi 3 organisasi mahasiswa Marhaenis pada <strong>September 1953</strong> di rumah dinas Walikota Jakarta Raya (Soediro), Jalan Taman Suropati:</p>
+<table>
+  <thead>
+    <tr><th>Organisasi</th><th>Basis</th><th>Delegasi</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Gerakan Mahasiswa Demokrat Indonesia (GMDI)</td><td>Jakarta</td><td>S.M. Hadiprabowo, Djawadi Hadipradoko, Sulomo</td></tr>
+    <tr><td>Gerakan Mahasiswa Merdeka</td><td>Surabaya</td><td>Slamet Djajawidjaja, Slamet Rahardjo, Heruman</td></tr>
+    <tr><td>Gerakan Mahasiswa Marhaenis</td><td>Yogyakarta</td><td>Wahyu Widodo, Subagio Masrukin, Sri Sumantri M.</td></tr>
+  </tbody>
+</table>
+<p>Proses fusi tersebut kemudian dipuncaki melalui <strong>Kongres I</strong> yang digelar di <strong>Surabaya pada 23 Maret 1954</strong> — tanggal ini ditetapkan sebagai tanggal kelahiran resmi GMNI.</p>
 <h2>Makna Lambang</h2>
-<p>[RAW TEXT MENYUSUL] Makna lambang: Merah (keberanian militan), Putih (kesucian arah), Hitam (keteguhan tekad), Bintang (cita-cita kerakyatan), Banteng (Marhaen yang dibela), Trisila (sosio-nasionalisme, sosio-demokrasi, ketuhanan).</p>
+<p>Setiap elemen lambang GMNI lahir dari makna perjuangan, bukan sekadar hiasan:</p>
+<ul>
+  <li><strong>Merah</strong> — Keberanian militan dalam perlawanan.</li>
+  <li><strong>Putih</strong> — Kesucian arah perjuangan.</li>
+  <li><strong>Hitam</strong> — Keteguhan tekad kader.</li>
+  <li><strong>Bintang</strong> — Ketinggian cita-cita kerakyatan.</li>
+  <li><strong>Banteng</strong> — Simbol rakyat Marhaen yang dibela oleh GMNI.</li>
+  <li><strong>Tiga Sudut</strong> — Perwujudan Trisila Marhaenisme.</li>
+</ul>
 `,
   },
   {
@@ -167,10 +194,10 @@ const HALAMAN: Array<{ slug: string; judul: string; konten: string }> = [
 <h2>Sistem Kaderisasi GMNI</h2>
 <p>Kaderisasi adalah urat nadi keberlanjutan perjuangan. Jenjang pendidikan kader di GMNI dijalankan berurutan:</p>
 <ul>
-  <li><strong>PPAB</strong> — [RAW TEXT MENYUSUL] Pendidikan Pengenalan & Penerimaan Anggota Baru.</li>
-  <li><strong>KTD</strong> — [RAW TEXT MENYUSUL] Kursus Kader Dasar.</li>
-  <li><strong>KTM</strong> — [RAW TEXT MENYUSUL] Kursus Kader Madya.</li>
-  <li><strong>KTP</strong> — [RAW TEXT MENYUSUL] Kursus Kader Pratama/Pemantapan.</li>
+  <li><strong>PPAB</strong> — Pekan Penerimaan Anggota Baru. Tahap awal rekrutmen kader.</li>
+  <li><strong>KTD</strong> — Kaderisasi Tingkat Dasar. Indoktrinasi ideologi dasar.</li>
+  <li><strong>KTM</strong> — Kaderisasi Tingkat Menengah. Penguatan analisis &amp; kepemimpinan.</li>
+  <li><strong>KTP</strong> — Kaderisasi Tingkat Pelopor. Puncak kaderisasi ideologis &amp; taktis.</li>
 </ul>
 <p>Agenda dan liputan kegiatan kaderisasi akan ditayangkan di kanal ini.</p>
 `,
@@ -179,8 +206,36 @@ const HALAMAN: Array<{ slug: string; judul: string; konten: string }> = [
     slug: "tokoh",
     judul: "Tokoh",
     konten: `
-<h2>Tokoh Nasional dari Kader</h2>
-<p>[RAW TEXT MENYUSUL] Profil tokoh nasional yang lahir dari kaderisasi GMNI. Satu entri per tokoh.</p>
+<h2>Tokoh Nasional dari Kader GMNI</h2>
+<p>Berikut tokoh nasional yang lahir dari kaderisasi GMNI, satu entri per tokoh:</p>
+<ul>
+  <li>Megawati Soekarnoputri</li>
+  <li>Ganjar Pranowo</li>
+  <li>Djarot Saiful Hidayat</li>
+  <li>Taufiq Kiemas</li>
+  <li>Antasari Azhar</li>
+  <li>Arief Hidayat</li>
+  <li>Siswono Yudo Husodo</li>
+</ul>
+<p>Profil lengkap masing-masing tokoh akan dimutakhirkan oleh admin melalui /admin/halaman.</p>
+`,
+  },
+  {
+    slug: "marhaenisme",
+    judul: "Marhaenisme",
+    konten: `
+<h2>Pemahaman Marhaenisme</h2>
+<p><strong>Marhaenisme</strong> adalah ideologi sosialis/Marxisme yang disesuaikan dengan kondisi dan budaya Indonesia, dicetuskan oleh Ir. Soekarno (1926–1927).</p>
+<p><strong>Asal nama:</strong> terinspirasi dari Mang Aen (Marhaen), seorang petani kecil di Bandung Selatan yang memiliki alat produksi sendiri (lahan &amp; cangkul), tetapi hasilnya hanya cukup untuk makan sekeluarga karena himpitan sistem.</p>
+<p><strong>Kaum Marhaen</strong> mencakup buruh (proletar), petani melarat, dan kaum miskin Indonesia lainnya yang memiliki alat produksi kecil namun tetap dieksploitasi oleh sistem kapitalisme dan imperialisme.</p>
+<h2>Trisila Marhaenisme</h2>
+<ul>
+  <li><strong>Sosio-Nasionalisme</strong> — Nasionalisme yang memihak rakyat kecil dan menempatkan persatuan di atas kepentingan golongan.</li>
+  <li><strong>Sosio-Demokrasi</strong> — Demokrasi politik sekaligus demokrasi ekonomi untuk kesejahteraan rakyat.</li>
+  <li><strong>Ketuhanan Yang Maha Esa</strong>.</li>
+</ul>
+<h2>Prinsip Perjuangan</h2>
+<p>Anti-Imperialisme, Anti-Kapitalisme, dan Berdiri di Kaki Sendiri (Berdikari).</p>
 `,
   },
   {
