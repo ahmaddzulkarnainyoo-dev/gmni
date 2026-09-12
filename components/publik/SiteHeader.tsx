@@ -43,16 +43,16 @@ export async function SiteHeader() {
   const beritaTicker = await ambilBeritaTicker();
   return (
     <header className="w-full">
-      {/* Kanal atas — hitam */}
-      <div className="bg-hitam-900 text-kertas-200">
-        <div className="mx-auto flex h-8 max-w-6xl items-center justify-between gap-4 px-4 font-mono text-[11px] uppercase tracking-widest">
+      {/* Kanal atas — tanggal dan sikap editorial */}
+      <div className="border-b border-white/15 bg-hitam-900 text-kertas-200">
+        <div className="mx-auto flex min-h-9 max-w-6xl items-center justify-between gap-4 px-4 font-mono text-[10px] uppercase tracking-[0.16em] sm:text-[11px] sm:tracking-widest">
           <span className="hidden text-kertas-300 sm:block">
             <TanggalHariIni />
           </span>
           <span className="flex-1 truncate text-center text-gmnimerah-400 sm:text-right sm:flex-none">
             Suara rakyat kecil — oposisi kebijakan
           </span>
-          <nav aria-label="Akun" className="flex items-center gap-3">
+          <nav aria-label="Akun" className="hidden items-center gap-3 md:flex">
             {user ? (
               <>
                 <Link
@@ -98,23 +98,22 @@ export async function SiteHeader() {
       </div>
 
       {/* Masthead — wordmark media */}
-      <div className="border-b-4 border-gmnimerah-500 bg-kertas-100">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
-          <Link href="/" className="flex items-center gap-3" aria-label={SITE_NAME}>
+      <div className="border-b-4 border-hitam-900 bg-kertas-50">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-6 sm:py-7">
+          <Link href="/" className="flex items-center gap-4" aria-label={SITE_NAME}>
             {/* Logo resmi GMNI (public/logo.png) */}
             <img
               src="/logo.png"
               alt={SITE_NAME}
               width={1456}
               height={1440}
-              className="h-9 w-9 shrink-0 object-contain sm:h-12 sm:w-12"
+              className="h-12 w-12 shrink-0 object-contain sm:h-16 sm:w-16"
             />
             <div className="min-w-0 leading-none">
-              <p className="font-serif text-3xl font-extrabold tracking-tight text-hitam-900 sm:text-4xl lg:text-5xl">
-                info{" "}
-                <span className="italic text-gmnimerah-500">Marhaen</span>
+              <p className="font-serif text-3xl font-black uppercase tracking-[0.08em] text-hitam-900 sm:text-4xl lg:text-5xl">
+                Suara <span className="text-gmnimerah-500">Marhaen</span>
               </p>
-              <p className="mt-2 hidden font-mono text-[11px] uppercase tracking-[0.28em] text-hitam-500 sm:block">
+              <p className="mt-2 hidden border-t border-hitam-900/20 pt-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-hitam-500 sm:block">
                 {SITE_TAGLINE}
               </p>
             </div>
@@ -123,10 +122,10 @@ export async function SiteHeader() {
         </div>
       </div>
 
-      {/* Ticker breaking — merah */}
-      <div className="bg-gmnimerah-500 text-white">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-1.5">
-          <span className="shrink-0 bg-black px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest">
+      {/* Ticker breaking — aksen merah, teks tetap mudah dibaca */}
+      <div className="border-b border-hitam-900/15 bg-kertas-100 text-hitam-900">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
+          <span className="shrink-0 rounded-sm bg-gmnimerah-600 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-widest text-white">
             Terbaru
           </span>
           <TickerBerita berita={beritaTicker} />

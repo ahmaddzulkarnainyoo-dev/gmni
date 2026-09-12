@@ -21,17 +21,17 @@ export function NavDesktop({
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Navigasi utama" className="hidden items-center lg:flex">
+    <nav aria-label="Navigasi utama" className="hidden items-center gap-1 lg:flex">
       {navUtama.map((item) => (
         <div key={item.href} className="relative group">
           <Link
             href={item.href}
             aria-current={jalurAktif(pathname, item.href) ? "page" : undefined}
             className={cn(
-              "flex items-center gap-1 px-3 py-2.5 font-sans text-[13px] font-semibold uppercase tracking-wider transition-colors",
+              "relative flex items-center gap-1 px-3 py-3 font-sans text-[13px] font-bold uppercase tracking-[0.12em] transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gmnimerah-600 after:transition-transform after:duration-200 hover:after:scale-x-100",
               jalurAktif(pathname, item.href)
-                ? "bg-gmnimerah-500 text-white"
-                : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                ? "text-gmnimerah-600 after:scale-x-100"
+                : "text-hitam-900 hover:text-gmnimerah-600",
             )}
           >
             {item.label}
@@ -51,9 +51,9 @@ export function NavDesktop({
                     pathname === `/berita/${k.slug}` ? "page" : undefined
                   }
                   className={cn(
-                    "block border-b border-hitam-100 px-4 py-2.5 text-sm font-medium last:border-b-0 hover:bg-gmnimerah-500 hover:text-white",
+                    "block border-b border-hitam-100 px-4 py-2.5 text-sm font-medium transition-colors hover:bg-gmnimerah-50 hover:text-gmnimerah-700",
                     pathname === `/berita/${k.slug}`
-                      ? "bg-gmnimerah-500 text-white"
+                      ? "border-l-4 border-gmnimerah-600 bg-gmnimerah-50 font-bold text-gmnimerah-700"
                       : "text-hitam-900",
                   )}
                 >
@@ -69,10 +69,10 @@ export function NavDesktop({
         aria-label="Cari"
         aria-current={jalurAktif(pathname, "/cari") ? "page" : undefined}
         className={cn(
-          "px-3 py-2.5 font-sans text-[13px] font-semibold uppercase tracking-wider hover:bg-gmnimerah-500 hover:text-white",
+          "relative px-3 py-3 font-sans text-[13px] font-bold uppercase tracking-[0.12em] text-hitam-900 transition-colors after:absolute after:inset-x-3 after:bottom-0 after:h-0.5 after:origin-left after:scale-x-0 after:bg-gmnimerah-600 after:transition-transform after:duration-200 hover:text-gmnimerah-600 hover:after:scale-x-100",
           jalurAktif(pathname, "/cari")
-            ? "bg-gmnimerah-500 text-white"
-            : "text-hitam-900",
+            ? "text-gmnimerah-600 after:scale-x-100"
+            : "",
         )}
       >
         Cari

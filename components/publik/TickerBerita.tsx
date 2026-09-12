@@ -43,7 +43,7 @@ export function TickerBerita({
       aria-live="polite"
       onMouseEnter={() => setJeda(true)}
       onMouseLeave={() => setJeda(false)}
-      className="relative h-5 min-w-0 flex-1 overflow-hidden font-mono text-[12px] uppercase tracking-wide"
+      className="relative h-6 min-w-0 flex-1 overflow-hidden font-sans text-[13px] font-medium tracking-normal"
     >
       {item.map((b, i) => (
         <div
@@ -60,12 +60,12 @@ export function TickerBerita({
               href={`/artikel/${b.slug}`}
               onFocus={() => setJeda(true)}
               onBlur={() => setJeda(false)}
-              className="block truncate text-white hover:underline hover:underline-offset-4"
+              className="block truncate text-hitam-800 transition-colors hover:text-gmnimerah-600 hover:underline hover:underline-offset-4"
             >
               {b.judul}
             </Link>
           ) : (
-            <span className="block truncate text-white/80">{b.judul}</span>
+            <span className="block truncate text-hitam-500">{b.judul}</span>
           )}
         </div>
       ))}

@@ -23,7 +23,7 @@ export function MobileNav({
   const pathname = usePathname();
 
   const taut = (cls: string, ekstra = "") =>
-    cn("block px-3 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider transition-colors", cls, ekstra);
+    cn("block border-b border-hitam-100 px-3 py-3 font-sans text-sm font-bold uppercase tracking-[0.12em] transition-colors", cls, ekstra);
 
   return (
     <>
@@ -32,7 +32,7 @@ export function MobileNav({
         aria-label={buka ? "Tutup menu" : "Buka menu"}
         aria-expanded={buka}
         onClick={() => setBuka((v) => !v)}
-        className="ml-auto flex items-center gap-2 px-2 py-4 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 hover:text-gmnimerah-600 lg:hidden"
+        className="ml-auto flex items-center gap-2 border-l border-hitam-900/15 px-3 py-4 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 transition-colors hover:text-gmnimerah-600 lg:hidden"
       >
         <span>{buka ? "Tutup" : "Menu"}</span>
         <span aria-hidden className="relative flex h-4 w-5 flex-col justify-between">
@@ -43,9 +43,9 @@ export function MobileNav({
       </button>
 
       {buka && (
-        <nav aria-label="Menu seluler" className="w-full border-t-2 border-hitam-900 bg-kertas-100 lg:hidden">
+        <nav aria-label="Menu seluler" className="w-full border-t-2 border-hitam-900 bg-kertas-50 lg:hidden">
           <div className="mx-auto max-w-6xl px-4 py-4">
-            <ul className="grid gap-1">
+            <ul className="grid gap-0">
               {navUtama.map((item) => (
                 <li key={item.href}>
                   <Link
@@ -56,8 +56,8 @@ export function MobileNav({
                     }
                     className={taut(
                       jalurAktif(pathname, item.href)
-                        ? "bg-gmnimerah-500 text-white"
-                        : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                        ? "border-l-4 border-gmnimerah-600 bg-gmnimerah-50 text-gmnimerah-700"
+                        : "text-hitam-900 hover:bg-gmnimerah-50 hover:text-gmnimerah-700",
                     )}
                   >
                     {item.label}
@@ -75,9 +75,9 @@ export function MobileNav({
                                 : undefined
                             }
                             className={cn(
-                              "block px-2 py-1.5 text-[13px] hover:text-gmnimerah-600",
+                              "block px-2 py-1.5 text-[13px] transition-colors hover:text-gmnimerah-600",
                               pathname === `/berita/${k.slug}`
-                                ? "bg-gmnimerah-100 font-bold text-gmnimerah-600"
+                                ? "border-l-2 border-gmnimerah-600 bg-gmnimerah-50 font-bold text-gmnimerah-700"
                                 : "text-hitam-600",
                             )}
                           >
@@ -98,8 +98,8 @@ export function MobileNav({
                   }
                   className={taut(
                     jalurAktif(pathname, "/cari")
-                      ? "bg-gmnimerah-500 text-white"
-                      : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                      ? "border-l-4 border-gmnimerah-600 bg-gmnimerah-50 text-gmnimerah-700"
+                      : "text-hitam-900 hover:bg-gmnimerah-50 hover:text-gmnimerah-700",
                   )}
                 >
                   Cari
