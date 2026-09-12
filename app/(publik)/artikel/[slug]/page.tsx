@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { bylineArtikel, fmtTanggal } from "@/lib/articles";
+import { getSessionUser } from "@/lib/session";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 import { KartuArtikel } from "@/components/ui/KartuArtikel";
+import { BagianKomentar } from "@/components/publik/BagianKomentar";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +74,18 @@ export default async function HalamanArtikel({
     },
   });
 
+  const [komentar, sesi] = await Promise.all([
+    prisma.komentar.findMany({
+      where: { artikelId: artikel.id, status: "TAMPIL" },
+      orderBy: { tanggal: "desc" },
+      take: 100,
+      include: {
+        penulis: { select: { id: true, namaLengkap: true, username: true } },
+      },
+    }),
+    getSessionUser(),
+  ]);
+
   return (
     <article className="mx-auto max-w-3xl px-4 py-10 md:py-14">
       <header>
@@ -135,6 +149,14 @@ export default async function HalamanArtikel({
           </div>
         </footer>
       )}
+
+      <BagianKomentar
+        slug={artikel.slug}
+        jumlah={artikel.jumlahKomentar}
+        komentar={komentar}
+        login={Boolean(sesi)}
+        namaUser={sesi?.name ?? ""}
+      />
 
       {terkait.length > 0 && (
         <section className="mt-14">

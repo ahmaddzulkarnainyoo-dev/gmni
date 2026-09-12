@@ -48,6 +48,12 @@ enum StatusAkun {
   SUSPEND
 }
 
+/// Status moderasi komentar publik (blueprint 7.5 & 8.3).
+enum StatusKomentar {
+  TAMPIL
+  DISEMBUNYIKAN
+}
+
 // ============================================================
 // 7.1 USER — kader terverifikasi
 // ============================================================
@@ -79,6 +85,7 @@ model User {
   halamanStatis     HalamanStatis[] @relation("HalamanDiubahOleh")
   tokohDibuat       Tokoh[]    @relation("TokohDibuatOleh")
   auditLogs         AuditLog[]
+  komentar          Komentar[]
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -173,6 +180,7 @@ model Artikel {
   kategoriId                String
   kategori                  Kategori          @relation(fields: [kategoriId], references: [id])
   tags                      ArtikelTag[]
+  komentar                  Komentar[]
   penulisId                 String
   penulis                   User              @relation("ArtikelPenulis", fields: [penulisId], references: [id])
   status                    StatusArtikel     @default(DRAFT)
@@ -202,6 +210,33 @@ model Artikel {
   @@index([penulisId])
   @@index([tanggalTerbit])
   @@index([disematkan])
+}
+
+// ============================================================
+// 7.5 KOMENTAR — diskusi publik artikel (Fase 2 · blueprint 8.3)
+// ============================================================
+
+model Komentar {
+  id            String         @id @default(cuid())
+  artikelId     String
+  artikel       Artikel        @relation(fields: [artikelId], references: [id], onDelete: Cascade)
+  /// Diisi bila komentator adalah kader/login; null = pengunjung.
+  penulisId     String?
+  penulis       User?          @relation(fields: [penulisId], references: [id], onDelete: SetNull)
+  /// Nama pengunjung (wajib bila penulisId null).
+  namaTamu      String?
+  isi           String         @db.Text
+  status        StatusKomentar @default(TAMPIL)
+  /// Berapa kali pengguna melaporkan komentar ini (blueprint 8.3).
+  jumlahLaporan Int            @default(0)
+  /// "recaptcha_v3" — metode verifikasi anti-bot saat pengiriman.
+  verifikasiVia String?
+  tanggal       DateTime       @default(now())
+
+  @@index([artikelId])
+  @@index([status])
+  @@index([jumlahLaporan])
+  @@index([tanggal])
 }
 
 // ============================================================
