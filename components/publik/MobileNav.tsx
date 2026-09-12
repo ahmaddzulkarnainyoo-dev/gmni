@@ -9,7 +9,11 @@ import { jalurAktif } from "@/lib/nav";
 type NavItem = { label: string; href: string };
 type KatItem = { label: string; slug: string };
 
-/** Navigasi mobile (hamburger/drawer) — cegah menu melebar di HP (Fase 3). */
+/**
+ * Navigasi mobile (hamburger/drawer) — cegah menu melebar di HP (Fase 3).
+ * Penanda halaman aktif memakai garis merah + teks merah tebal (selaras
+ * `NavDesktop`), bukan blok latar merah solid.
+ */
 export function MobileNav({
   navUtama,
   kategoriBerita,
@@ -22,8 +26,14 @@ export function MobileNav({
   const [buka, setBuka] = useState(false);
   const pathname = usePathname();
 
-  const taut = (cls: string, ekstra = "") =>
-    cn("block border-b border-hitam-100 px-3 py-3 font-sans text-sm font-bold uppercase tracking-[0.12em] transition-colors", cls, ekstra);
+  const taut = (aktif: boolean, ekstra = "") =>
+    cn(
+      "block border-b-2 px-3 py-3 font-sans text-sm uppercase tracking-[0.08em] transition-colors",
+      aktif
+        ? "border-red-600 font-bold text-red-600"
+        : "border-transparent font-medium text-hitam-900 hover:border-red-600 hover:text-red-600",
+      ekstra,
+    );
 
   return (
     <>
@@ -32,7 +42,7 @@ export function MobileNav({
         aria-label={buka ? "Tutup menu" : "Buka menu"}
         aria-expanded={buka}
         onClick={() => setBuka((v) => !v)}
-        className="ml-auto flex items-center gap-2 border-l border-hitam-900/15 px-3 py-4 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 transition-colors hover:text-gmnimerah-600 lg:hidden"
+        className="ml-auto flex items-center gap-2 border-l border-hitam-900/15 px-3 py-4 font-sans text-[11px] font-bold uppercase tracking-[0.12em] text-hitam-900 transition-colors hover:text-red-600 lg:hidden"
       >
         <span>{buka ? "Tutup" : "Menu"}</span>
         <span aria-hidden className="relative flex h-4 w-5 flex-col justify-between">
@@ -54,31 +64,27 @@ export function MobileNav({
                     aria-current={
                       jalurAktif(pathname, item.href) ? "page" : undefined
                     }
-                    className={taut(
-                      jalurAktif(pathname, item.href)
-                        ? "border-l-4 border-gmnimerah-600 bg-gmnimerah-50 text-gmnimerah-700"
-                        : "text-hitam-900 hover:bg-gmnimerah-50 hover:text-gmnimerah-700",
-                    )}
+                    className={taut(jalurAktif(pathname, item.href))}
                   >
                     {item.label}
                   </Link>
                   {item.href === "/berita" && (
-                    <ul className="ml-3 mt-1 grid gap-0.5 border-l-2 border-hitam-200 pl-3">
+                    <ul className="ml-3 mt-1 grid gap-0.5 border-l border-hitam-200 pl-3">
                       {kategoriBerita.map((k) => (
                         <li key={k.slug}>
                           <Link
                             href={`/berita/${k.slug}`}
                             onClick={() => setBuka(false)}
                             aria-current={
-                              pathname === `/berita/${k.slug}`
+                              jalurAktif(pathname, `/berita/${k.slug}`)
                                 ? "page"
                                 : undefined
                             }
                             className={cn(
-                              "block px-2 py-1.5 text-[13px] transition-colors hover:text-gmnimerah-600",
-                              pathname === `/berita/${k.slug}`
-                                ? "border-l-2 border-gmnimerah-600 bg-gmnimerah-50 font-bold text-gmnimerah-700"
-                                : "text-hitam-600",
+                              "block border-b-2 px-2 py-1.5 font-sans text-[13px] transition-colors",
+                              jalurAktif(pathname, `/berita/${k.slug}`)
+                                ? "border-red-600 font-bold text-red-600"
+                                : "border-transparent font-medium text-hitam-600 hover:text-red-600",
                             )}
                           >
                             {k.label}
@@ -96,38 +102,34 @@ export function MobileNav({
                   aria-current={
                     jalurAktif(pathname, "/cari") ? "page" : undefined
                   }
-                  className={taut(
-                    jalurAktif(pathname, "/cari")
-                      ? "border-l-4 border-gmnimerah-600 bg-gmnimerah-50 text-gmnimerah-700"
-                      : "text-hitam-900 hover:bg-gmnimerah-50 hover:text-gmnimerah-700",
-                  )}
+                  className={taut(jalurAktif(pathname, "/cari"))}
                 >
                   Cari
                 </Link>
               </li>
             </ul>
 
-            <div className="mt-4 flex flex-wrap gap-2 border-t-2 border-hitam-200 pt-4">
+            <div className="mt-4 flex flex-wrap gap-2 border-t border-hitam-900/20 pt-4">
               {user.masuk ? (
                 <>
-                  <Link href="/dasbor" onClick={() => setBuka(false)} className="border border-hitam-900 px-3 py-1.5 text-sm font-semibold text-hitam-900 hover:bg-hitam-900 hover:text-white">
+                  <Link href="/dasbor" onClick={() => setBuka(false)} className="rounded-sm border border-hitam-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-hitam-900 transition-colors hover:bg-hitam-900 hover:text-white">
                     Dasbor
                   </Link>
                   {user.roleNama && (
-                    <Link href="/admin" onClick={() => setBuka(false)} className="border border-gmnimerah-500 px-3 py-1.5 text-sm font-semibold text-gmnimerah-600 hover:bg-gmnimerah-500 hover:text-white">
+                    <Link href="/admin" onClick={() => setBuka(false)} className="rounded-sm border border-red-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-600 transition-colors hover:bg-red-600 hover:text-white">
                       Admin
                     </Link>
                   )}
-                  <Link href="/api/auth/signout?callbackUrl=/login" className="bg-gmnimerah-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gmnimerah-600">
+                  <Link href="/api/auth/signout?callbackUrl=/login" className="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-red-700">
                     Keluar
                   </Link>
                 </>
               ) : (
                 <>
-                  <Link href="/login" onClick={() => setBuka(false)} className="border border-hitam-900 px-3 py-1.5 text-sm font-semibold text-hitam-900 hover:bg-hitam-900 hover:text-white">
+                  <Link href="/login" onClick={() => setBuka(false)} className="rounded-sm border border-hitam-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-hitam-900 transition-colors hover:bg-hitam-900 hover:text-white">
                     Masuk
                   </Link>
-                  <Link href="/daftar" onClick={() => setBuka(false)} className="bg-gmnimerah-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gmnimerah-600">
+                  <Link href="/daftar" onClick={() => setBuka(false)} className="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-red-700">
                     Registrasi Kader
                   </Link>
                 </>

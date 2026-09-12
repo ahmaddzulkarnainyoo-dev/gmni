@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import {
@@ -7,7 +8,6 @@ import {
   SITE_NAME,
   SITE_TAGLINE,
 } from "@/lib/site";
-import { DividerTrisila } from "@/components/ui/DividerTrisila";
 import { MobileNav } from "@/components/publik/MobileNav";
 import { NavDesktop } from "@/components/publik/NavDesktop";
 import { TickerBerita } from "@/components/publik/TickerBerita";
@@ -42,36 +42,36 @@ export async function SiteHeader() {
   const user = sess?.user;
   const beritaTicker = await ambilBeritaTicker();
   return (
-    <header className="w-full">
+    <header className="static w-full">
       {/* Kanal atas — tanggal dan sikap editorial */}
-      <div className="border-b border-white/15 bg-hitam-900 text-kertas-200">
-        <div className="mx-auto flex min-h-9 max-w-6xl items-center justify-between gap-4 px-4 font-mono text-[10px] uppercase tracking-[0.16em] sm:text-[11px] sm:tracking-widest">
-          <span className="hidden text-kertas-300 sm:block">
+      <div className="border-b-[3px] border-double border-black bg-hitam-900 text-kertas-200">
+        <div className="mx-auto flex min-h-10 max-w-6xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-1.5 font-sans text-[10px] font-medium uppercase tracking-wide sm:text-[11px]">
+          <span className="shrink-0 text-kertas-300">
             <TanggalHariIni />
           </span>
-          <span className="flex-1 truncate text-center text-gmnimerah-400 sm:text-right sm:flex-none">
+          <span className="hidden min-w-0 flex-1 truncate text-center text-kertas-300 lg:block">
             Suara rakyat kecil — oposisi kebijakan
           </span>
-          <nav aria-label="Akun" className="hidden items-center gap-3 md:flex">
+          <nav aria-label="Akun" className="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2.5">
             {user ? (
               <>
                 <Link
                   href="/dasbor"
-                  className="text-kertas-200 transition-colors hover:text-gmnimerah-400"
+                  className="inline-flex min-h-6 items-center px-1 text-kertas-200 transition-colors hover:text-white hover:underline underline-offset-4"
                 >
                   Dasbor
                 </Link>
                 {user.roleNama && (
                   <Link
                     href="/admin"
-                    className="border border-gmnimerah-500 px-2 py-0.5 text-gmnimerah-400 transition-colors hover:bg-gmnimerah-500 hover:text-white"
+                    className="inline-flex min-h-7 items-center rounded-sm border border-white/30 px-2.5 py-1 text-[10px] text-kertas-200 transition-colors hover:border-white hover:text-white"
                   >
                     Admin
                   </Link>
                 )}
                 <Link
                   href="/api/auth/signout?callbackUrl=/login"
-                  className="bg-gmnimerah-500 px-2 py-0.5 text-white transition-colors hover:bg-gmnimerah-400"
+                  className="inline-flex min-h-7 items-center rounded-sm border border-white/30 px-2.5 py-1 text-[10px] text-kertas-200 transition-colors hover:border-white hover:text-white"
                 >
                   Keluar
                 </Link>
@@ -80,13 +80,13 @@ export async function SiteHeader() {
               <>
                 <Link
                   href="/login"
-                  className="text-kertas-200 transition-colors hover:text-gmnimerah-400"
+                  className="inline-flex min-h-7 items-center px-1 text-[10px] text-kertas-200 transition-colors hover:text-white hover:underline underline-offset-4"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/daftar"
-                  className="bg-gmnimerah-500 px-2 py-0.5 text-white transition-colors hover:bg-gmnimerah-400"
+                  className="inline-flex min-h-7 items-center rounded-sm border border-white/30 px-2.5 py-1 text-[10px] font-semibold text-white transition-colors hover:border-white hover:bg-white/10"
                 >
                   <span className="sm:hidden">Daftar</span>
                   <span className="hidden sm:inline">Registrasi Kader</span>
@@ -98,42 +98,42 @@ export async function SiteHeader() {
       </div>
 
       {/* Masthead — wordmark media */}
-      <div className="border-b-4 border-hitam-900 bg-kertas-50">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-6 sm:py-7">
-          <Link href="/" className="flex items-center gap-4" aria-label={SITE_NAME}>
+      <div className="border-b-[3px] border-double border-hitam-900 bg-kertas-50">
+        <div className="mx-auto flex max-w-6xl items-center justify-center px-4 py-8 sm:py-10 lg:py-12">
+          <Link href="/" className="flex min-w-0 items-center gap-4 sm:gap-5 lg:gap-7" aria-label={SITE_NAME}>
             {/* Logo resmi GMNI (public/logo.png) */}
-            <img
+            <Image
               src="/logo.png"
-              alt={SITE_NAME}
+              alt=""
               width={1456}
               height={1440}
-              className="h-12 w-12 shrink-0 object-contain sm:h-16 sm:w-16"
+              sizes="(min-width: 1024px) 96px, (min-width: 640px) 80px, 48px"
+              className="h-14 w-14 shrink-0 object-contain sm:h-22 sm:w-22 lg:h-28 lg:w-28"
             />
             <div className="min-w-0 leading-none">
-              <p className="font-serif text-3xl font-black uppercase tracking-[0.08em] text-hitam-900 sm:text-4xl lg:text-5xl">
-                Suara <span className="text-gmnimerah-500">Marhaen</span>
+              <p className="whitespace-nowrap font-serif text-[clamp(2rem,8vw,3.25rem)] font-bold leading-none tracking-tight text-hitam-900 sm:text-6xl lg:text-7xl">
+                info <span className="text-red-600">Marhaen</span>
               </p>
-              <p className="mt-2 hidden border-t border-hitam-900/20 pt-2 font-mono text-[10px] font-medium uppercase tracking-[0.24em] text-hitam-500 sm:block">
+              <p className="mt-3 border-t border-hitam-900/35 pt-2.5 font-sans text-[9px] font-medium uppercase leading-relaxed tracking-[0.1em] text-hitam-600 sm:text-[11px] sm:tracking-[0.18em] lg:text-xs">
                 {SITE_TAGLINE}
               </p>
             </div>
           </Link>
-          <DividerTrisila className="hidden lg:flex" lebar="h-1 w-10" />
         </div>
       </div>
 
-      {/* Ticker breaking — aksen merah, teks tetap mudah dibaca */}
-      <div className="border-b border-hitam-900/15 bg-kertas-100 text-hitam-900">
-        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2">
-          <span className="shrink-0 rounded-sm bg-gmnimerah-600 px-3 py-1 font-mono text-[11px] font-bold uppercase tracking-widest text-white">
-            Terbaru
+      {/* Ticker berita — bar netral dengan badge merah ringkas */}
+      <div className="border-y border-black/10 bg-[#F9F9FB] text-hitam-900">
+        <div className="mx-auto flex min-h-10 max-w-6xl items-center gap-3 px-4 py-2 sm:gap-4">
+          <span className="shrink-0 rounded-sm bg-red-600 px-2 py-0.5 font-sans text-xs font-bold text-white">
+            TERBARU
           </span>
           <TickerBerita berita={beritaTicker} />
         </div>
       </div>
 
       {/* Navigasi utama — kategori */}
-      <div className="border-b-2 border-hitam-900 bg-kertas-150">
+      <div className="border-b-[3px] border-double border-hitam-900 bg-kertas-50">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between px-4">
           <NavDesktop navUtama={NAV_UTAMA} kategoriBerita={KATEGORI_BERITA} />
 

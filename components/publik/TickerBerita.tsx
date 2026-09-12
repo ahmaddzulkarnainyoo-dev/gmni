@@ -15,9 +15,10 @@ const PLACEHOLDER: ItemTicker = {
 
 /**
  * Ticker berita dinamis di bar "TERBARU" — auto-rotate fade-slide
- * tiap 4,5 detik, berhenti saat hover/fokus. Setiap judul artikel
- * terbit terbaru tertaut ke /artikel/[slug]. Jika terbit < 3,
- * slot dilengkapi placeholder rapi (bukan teks mentah).
+ * tiap 4,5 detik, berhenti saat hover/fokus. Judul memakai sans-serif
+ * normal (bukan kapital rapat) agar terbaca seperti lead koran, dan
+ * tertaut ke /artikel/[slug]. Jika artikel terbit < 3, slot dilengkapi
+ * placeholder rapi (bukan teks mentah).
  */
 export function TickerBerita({
   berita,
@@ -43,32 +44,37 @@ export function TickerBerita({
       aria-live="polite"
       onMouseEnter={() => setJeda(true)}
       onMouseLeave={() => setJeda(false)}
-      className="relative h-6 min-w-0 flex-1 overflow-hidden font-sans text-[13px] font-medium tracking-normal"
+      className="relative h-6 min-w-0 flex-1 overflow-hidden font-sans text-[13px] font-normal normal-case tracking-normal sm:text-sm"
     >
-      {item.map((b, i) => (
-        <div
-          key={b.slug ?? `placeholder-${i}`}
-          className={cn(
-            "absolute inset-0 flex items-center transition-all duration-700 ease-in-out",
-            i === indeks
-              ? "translate-x-0 opacity-100"
-              : "pointer-events-none -translate-x-3 opacity-0",
-          )}
-        >
-          {b.slug ? (
-            <Link
-              href={`/artikel/${b.slug}`}
-              onFocus={() => setJeda(true)}
-              onBlur={() => setJeda(false)}
-              className="block truncate text-hitam-800 transition-colors hover:text-gmnimerah-600 hover:underline hover:underline-offset-4"
-            >
-              {b.judul}
-            </Link>
-          ) : (
-            <span className="block truncate text-hitam-500">{b.judul}</span>
-          )}
-        </div>
-      ))}
+      {item.map((b, i) => {
+        const tampil = i === indeks;
+        return (
+          <div
+            key={b.slug ?? `placeholder-${i}`}
+            aria-hidden={!tampil}
+            className={cn(
+              "absolute inset-0 flex items-center transition-all duration-700 ease-in-out",
+              tampil
+                ? "translate-x-0 opacity-100"
+                : "pointer-events-none -translate-x-3 opacity-0",
+            )}
+          >
+            {b.slug ? (
+              <Link
+                href={`/artikel/${b.slug}`}
+                tabIndex={tampil ? undefined : -1}
+                onFocus={() => setJeda(true)}
+                onBlur={() => setJeda(false)}
+                className="block truncate text-hitam-800 transition-colors hover:text-red-600 hover:underline hover:underline-offset-4"
+              >
+                {b.judul}
+              </Link>
+            ) : (
+              <span className="block truncate text-hitam-500">{b.judul}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
