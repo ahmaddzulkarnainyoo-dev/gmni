@@ -3,19 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { jalurAktif } from "@/lib/nav";
+
+export { jalurAktif };
 
 type NavItem = { label: string; href: string };
 type KatItem = { label: string; slug: string };
-
-/**
- * Tab aktif jika pathname sama persis dengan href, atau merupakan
- * sub-halaman di bawahnya (mis. /berita/politik → tab "Berita" aktif).
- * Beranda ("/") hanya aktif pada pathname "/" persis.
- */
-export function jalurAktif(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/";
-  return pathname === href || pathname.startsWith(`${href}/`);
-}
 
 /** Navigasi utama desktop (lg+) — tab merah mengikuti halaman aktif. */
 export function NavDesktop({

@@ -60,9 +60,9 @@
 @layer base {
   html {
     scroll-behavior: smooth;
-    /* Cegah horizontal scroll/overflow di mobile tanpa merusak sticky header
-       (overflow-x: clip TIDAK membuat scroll container — aman untuk
-       position: sticky, berbeda dengan overflow-x: hidden). */
+    /* Cegah horizontal scroll/overflow di mobile (overflow-x: clip TIDAK
+       membuat scroll container — aman untuk position: sticky pada sidebar
+       /admin & /dasbor, berbeda dengan overflow-x: hidden). */
     overflow-x: clip;
   }
 

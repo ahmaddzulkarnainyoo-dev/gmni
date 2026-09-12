@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { jalurAktif } from "@/components/publik/NavDesktop";
+import { jalurAktif } from "@/lib/nav";
 
 type NavItem = { label: string; href: string };
 type KatItem = { label: string; slug: string };
@@ -93,14 +93,14 @@ export function MobileNav({
                 <Link
                   href="/cari"
                   onClick={() => setBuka(false)}
-                    aria-current={
-                      jalurAktif(pathname, "/cari") ? "page" : undefined
-                    }
-                    className={taut(
-                      jalurAktif(pathname, "/cari")
-                        ? "bg-gmnimerah-500 text-white"
-                        : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
-                    )}
+                  aria-current={
+                    jalurAktif(pathname, "/cari") ? "page" : undefined
+                  }
+                  className={taut(
+                    jalurAktif(pathname, "/cari")
+                      ? "bg-gmnimerah-500 text-white"
+                      : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                  )}
                 >
                   Cari
                 </Link>

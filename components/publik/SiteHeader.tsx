@@ -10,6 +10,8 @@ import {
 import { DividerTrisila } from "@/components/ui/DividerTrisila";
 import { MobileNav } from "@/components/publik/MobileNav";
 import { NavDesktop } from "@/components/publik/NavDesktop";
+import { TickerBerita } from "@/components/publik/TickerBerita";
+import { prisma } from "@/lib/prisma";
 
 function TanggalHariIni() {
   const tanggal = new Date().toLocaleDateString("id-ID", {
@@ -21,11 +23,26 @@ function TanggalHariIni() {
   return <time className="uppercase">{tanggal}</time>;
 }
 
+/** 3 artikel terbit terbaru untuk ticker "TERBARU" (fallback [] bila DB offline). */
+async function ambilBeritaTicker(): Promise<Array<{ judul: string; slug: string }>> {
+  try {
+    return await prisma.artikel.findMany({
+      where: { status: "TERBIT" },
+      orderBy: [{ disematkan: "desc" }, { tanggalTerbit: "desc" }],
+      take: 3,
+      select: { judul: true, slug: true },
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function SiteHeader() {
   const sess = await getServerSession(authOptions);
   const user = sess?.user;
+  const beritaTicker = await ambilBeritaTicker();
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="w-full">
       {/* Kanal atas — hitam */}
       <div className="bg-hitam-900 text-kertas-200">
         <div className="mx-auto flex h-8 max-w-6xl items-center justify-between gap-4 px-4 font-mono text-[11px] uppercase tracking-widest">
@@ -112,10 +129,7 @@ export async function SiteHeader() {
           <span className="shrink-0 bg-black px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest">
             Terbaru
           </span>
-          <p className="truncate font-mono text-[12px] uppercase tracking-wide">
-            Fase 1 aktif — portal dinamis terkoneksi database. Tulisan
-            kader mengalir menuju edisi perdana info Marhaen.
-          </p>
+          <TickerBerita berita={beritaTicker} />
         </div>
       </div>
 
