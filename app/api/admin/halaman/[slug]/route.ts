@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
+import { mdKeHtml } from "@/lib/markdown";
 
-/** Menyimpan konten halaman statis (blueprint 12: editable admin, no-code). */
+/** Menyimpan konten halaman statis (blueprint 12: editable admin, no-code). Input Markdown, tersimpan HTML aman. */
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -21,11 +22,12 @@ export async function PATCH(
   if (!judul || !konten) {
     return NextResponse.json({ error: "Judul dan konten wajib diisi." }, { status: 400 });
   }
+  const kontenHtml = mdKeHtml(konten);
 
   const diperbarui = await prisma.$transaction([
     prisma.halamanStatis.update({
       where: { slug },
-      data: { judul, konten, terakhirDiubahOlehId: user.id },
+      data: { judul, konten: kontenHtml, terakhirDiubahOlehId: user.id },
     }),
     prisma.auditLog.create({
       data: {
@@ -34,7 +36,7 @@ export async function PATCH(
         entitasTipe: "HalamanStatis",
         entitasId: halaman.id,
         dataSebelum: { judul: halaman.judul, panjang: halaman.konten.length },
-        dataSesudah: { judul, panjang: konten.length },
+        dataSesudah: { judul, panjang: kontenHtml.length },
       },
     }),
   ]);

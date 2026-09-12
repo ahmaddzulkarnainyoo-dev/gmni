@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import { deskripsiDariHalaman } from "@/lib/halaman";
+import { ambilHalaman, deskripsiDariHalaman } from "@/lib/halaman";
 
 export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const h = await prisma.halamanStatis.findUnique({ where: { slug: "tokoh" } });
+  const h = await ambilHalaman("tokoh");
   return {
     title: h?.judul ?? "Tokoh",
     description: h ? deskripsiDariHalaman(h) : undefined,
@@ -22,7 +22,7 @@ export default async function HalamanTokoh() {
       where: { status: "AKTIF" },
       orderBy: [{ urutan: "asc" }, { nama: "asc" }],
     }),
-    prisma.halamanStatis.findUnique({ where: { slug: "tokoh" } }),
+    ambilHalaman("tokoh"),
   ]);
 
   return (

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
+import { mdKeHtml } from "@/lib/markdown";
 import { slugify } from "@/lib/slug";
 
-/** POST /api/admin/halaman — buat halaman statis baru (Super Admin/Editor). */
+/** POST /api/admin/halaman — buat halaman statis baru (Super Admin/Editor). Input Markdown, tersimpan HTML aman. */
 export async function POST(request: Request) {
   const user = await requirePermission("halaman_statis.edit");
 
@@ -16,6 +17,7 @@ export async function POST(request: Request) {
   if (!konten) {
     return NextResponse.json({ error: "Konten halaman wajib diisi." }, { status: 400 });
   }
+  const kontenHtml = mdKeHtml(konten);
 
   const slugUsulan =
     typeof body.slug === "string" && body.slug.trim()
@@ -34,7 +36,7 @@ export async function POST(request: Request) {
 
   const dibuat = await prisma.$transaction([
     prisma.halamanStatis.create({
-      data: { slug: slugUsulan, judul, konten, terakhirDiubahOlehId: user.id },
+      data: { slug: slugUsulan, judul, konten: kontenHtml, terakhirDiubahOlehId: user.id },
     }),
     prisma.auditLog.create({
       data: {

@@ -1,15 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { htmlKeMd, mdKeHtml } from "@/lib/markdown";
 
 type HalamanData = { slug: string; judul: string; konten: string };
 
-/** Editor konten halaman statis (no-code, blueprint 12). */
+/** Editor konten halaman statis (Markdown, blueprint 12). Konten di DB tetap HTML. */
 export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
   const [slug, setSlug] = useState(halaman[0]?.slug ?? "");
   const hal = halaman.find((h) => h.slug === slug) ?? halaman[0];
   const [judul, setJudul] = useState(hal?.judul ?? "");
-  const [konten, setKonten] = useState(hal?.konten ?? "");
+  const [konten, setKonten] = useState(hal ? htmlKeMd(hal.konten) : "");
+  const [pratinjau, setPratinjau] = useState(true);
+  const pratinjauHtml = useMemo(() => mdKeHtml(konten), [konten]);
   const [memuat, setMemuat] = useState(false);
   const [pesan, setPesan] = useState<string | null>(null);
   const [eror, setEror] = useState<string | null>(null);
@@ -47,7 +50,7 @@ export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
     setSlug(s);
     if (h) {
       setJudul(h.judul);
-      setKonten(h.konten);
+      setKonten(htmlKeMd(h.konten));
     }
     setPesan(null);
     setEror(null);
@@ -126,7 +129,7 @@ export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
           </div>
           <label className="mt-3 block">
             <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
-              Konten (HTML)
+              Konten (Markdown) — tampil persis di rute publik setelah disimpan
             </span>
             <textarea
               required
@@ -183,16 +186,39 @@ export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
         </label>
 
         <label className="mt-4 block">
-          <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
-            Konten (HTML)
+          <span className="mb-1 flex items-center justify-between font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+            <span>Konten (Markdown)</span>
+            <button
+              type="button"
+              onClick={() => setPratinjau((v) => !v)}
+              className="bg-kertas-200 px-2 py-1 text-hitam-800 hover:bg-gmnimerah-500 hover:text-white"
+            >
+              {pratinjau ? "Tutup Pratinjau" : "Pratinjau"}
+            </button>
           </span>
           <textarea
             rows={18}
             value={konten}
             onChange={(e) => setKonten(e.target.value)}
+            placeholder={"## Judul Bagian\n\nTulis **tebal**, _miring_, - daftar, --- pemisah."}
             className="w-full resize-y border-2 border-hitam-900 bg-white px-3 py-3 font-mono text-[13px] leading-relaxed text-hitam-900 outline-none focus:border-gmnimerah-500"
           />
+          <span className="mt-1 block text-xs text-hitam-400">
+            Sintaks didukung: ## judul, **tebal**, _miring_, - daftar, --- pemisah. Hasil tampil persis seperti di halaman publik setelah disimpan.
+          </span>
         </label>
+
+        {pratinjau && (
+          <div className="mt-4 border-2 border-hitam-900 bg-kertas-100 p-4">
+            <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+              Pratinjau Tampilan Publik
+            </p>
+            <div
+              className="konten-artikel border border-hitam-200 bg-white p-4"
+              dangerouslySetInnerHTML={{ __html: pratinjauHtml }}
+            />
+          </div>
+        )}
 
         {pesan && (
           <p role="status" className="mt-3 border-2 border-hitam-900 bg-kertas-200 px-3 py-2 text-sm font-semibold text-hitam-800">
