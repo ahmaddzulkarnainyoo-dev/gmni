@@ -27,6 +27,7 @@ const MENU_ADMIN: Array<{
       { label: "Pengguna & Undangan", href: "/admin/pengguna" },
       { label: "Peran & Hak Akses", href: "/admin/peran" },
       { label: "Halaman Statis", href: "/admin/halaman" },
+      { label: "Tokoh", href: "/admin/tokoh" },
       { label: "Tampilan & Branding", href: "/admin/tampilan" },
       { label: "Iklan & Donasi", href: "/admin/iklan-donasi" },
       { label: "Pengaturan Situs", href: "/admin/pengaturan" },

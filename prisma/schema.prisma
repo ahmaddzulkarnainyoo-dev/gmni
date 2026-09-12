@@ -77,6 +77,7 @@ model User {
   artikelDisetujui  Artikel[]  @relation("ArtikelDisetujuiOleh")
   roleDibuat        Role[]     @relation("RoleDibuatOleh")
   halamanStatis     HalamanStatis[] @relation("HalamanDiubahOleh")
+  tokohDibuat       Tokoh[]    @relation("TokohDibuatOleh")
   auditLogs         AuditLog[]
 
   createdAt         DateTime  @default(now())
@@ -217,6 +218,32 @@ model HalamanStatis {
 
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+// ============================================================
+// 7.10 TOKOH — profil tokoh Marhaenis & alumni kader (Fase 3)
+// ============================================================
+
+model Tokoh {
+  id           String   @id @default(cuid())
+  nama         String
+  slug         String   @unique
+  julukan      String?  /// contoh: "Bung Karno", "Bapak Marhaenisme"
+  gambar       String?  /// URL foto (object storage / Supabase Storage)
+  biografi     String   @db.Text
+  kutipan      String?  @db.Text /// kutipan singkat untuk kartu tokoh
+  lahir        Int?     /// tahun lahir
+  wafat        Int?     /// tahun wafat; null = masih hidup
+  status       String   @default("AKTIF") /// "AKTIF" | "ARSIP"
+  urutan       Int      @default(0) /// urutan tampil; 0 = setelah nama
+  dibuatOlehId String?
+  dibuatOleh   User?    @relation("TokohDibuatOleh", fields: [dibuatOlehId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([status])
+  @@index([urutan])
 }
 
 // ============================================================

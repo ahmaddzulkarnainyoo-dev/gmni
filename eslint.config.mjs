@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Build output webpack-only (repo memakai `next dev/build --webpack`).
+    ".next-webpack/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

@@ -60,11 +60,18 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    /* Cegah horizontal scroll/overflow di mobile tanpa merusak sticky header
+       (overflow-x: clip TIDAK membuat scroll container — aman untuk
+       position: sticky, berbeda dengan overflow-x: hidden). */
+    overflow-x: clip;
   }
 
   body {
     background: var(--background);
     color: var(--foreground);
+    overflow-x: clip;
+    overflow-wrap: break-word;
+    max-width: 100%;
   }
 
   ::selection {
@@ -186,5 +193,33 @@
 
   .konten-artikel > :first-child {
     margin-top: 0;
+  }
+
+  /* Utilitas form admin (panel tokoh/kategori/tag) */
+  .label-bidang {
+    margin-bottom: 0.25rem;
+    display: block;
+    font-family: var(--font-plexmono), monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--color-hitam-600);
+  }
+
+  .input-bidang {
+    width: 100%;
+    border: 2px solid var(--color-hitam-900);
+    background: #ffffff;
+    padding: 0.5rem 0.75rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--color-hitam-900);
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  .input-bidang:focus {
+    border-color: var(--color-gmnimerah-500);
   }
 }

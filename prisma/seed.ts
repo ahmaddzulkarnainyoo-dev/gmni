@@ -289,6 +289,32 @@ const HALAMAN: Array<{ slug: string; judul: string; konten: string }> = [
   },
 ];
 
+// Profil tokoh Marhaenis (Fase 3) — redaksi dapat menambah via /admin/tokoh.
+const TOKOH = [
+  {
+    slug: "ir-soekarno",
+    nama: "Ir. Soekarno",
+    julukan: "Bung Karno · Penggali Marhaenisme",
+    lahir: 1901,
+    wafat: 1970,
+    urutan: 1,
+    kutipan: "Berdirilah di atas kaki sendiri!",
+    biografi:
+      "Presiden Pertama Republik Indonesia. Pada 1933 menggali paham Marhaenisme dari kisah Pak Marhaen, petani miskin Sukabumi yang memiliki sedikit sawah, kambing, dan kerajinan — namun berdiri di atas kaki sendiri. Marhaenisme menempatkan Marhaen sebagai proletaris sekaligus pendiri kekuatan bangsa, melampaui paham proletaris Eropa.",
+  },
+  {
+    slug: "sutjipto-marhaen",
+    nama: "Sutjipto Marhaen",
+    julukan: "Penulis Marhaenisme 2000",
+    lahir: 1909,
+    wafat: 1987,
+    urutan: 2,
+    kutipan: null,
+    biografi:
+      "Pejuang Marhaenisme yang dalam bukunya \"Marhaenisme 2000\" (Pasardha, 1984) menyempurnakan gagasan Pak Marhaen — berdiri di atas kaki sendiri menuju masyarakat adil dan makmur tanpa eksploitasi. Meraih gelar doktor dari Universitas Indonesia pada usia 73 tahun; gelar \"Marhaen\" dianugerahkan langsung oleh Ir. Soekarno.",
+  },
+];
+
 // ============================================================
 // SEED UTAMA — idempoten (upsert)
 // ============================================================
@@ -363,6 +389,27 @@ async function seedHalaman() {
     });
   }
   console.log(`✓ HalamanStatis: ${HALAMAN.length} ter-upsert.`);
+}
+
+/** Profil tokoh Marhaenis untuk halaman publik /tokoh (Fase 3). */
+async function seedTokoh() {
+  for (const t of TOKOH) {
+    await prisma.tokoh.upsert({
+      where: { slug: t.slug },
+      update: {
+        nama: t.nama,
+        julukan: t.julukan,
+        lahir: t.lahir,
+        wafat: t.wafat,
+        urutan: t.urutan,
+        kutipan: t.kutipan,
+        biografi: t.biografi,
+        status: "AKTIF",
+      },
+      create: { ...t, status: "AKTIF" },
+    });
+  }
+  console.log(`✓ Tokoh: ${TOKOH.length} profil Marhaenis ter-upsert.`);
 }
 
 /** Super Admin pertama — dari env (blueprint 13.3: keputusan open). */
@@ -440,6 +487,7 @@ async function main() {
   await seedKategori();
   await seedTag();
   await seedHalaman();
+  await seedTokoh();
   await seedSuperAdmin();
   console.log("── Seed selesai. Pastikan tidak ada pesan ⚠ yang tidak diharapkan ──");
 }

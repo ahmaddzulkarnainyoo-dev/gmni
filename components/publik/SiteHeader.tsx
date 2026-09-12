@@ -9,6 +9,7 @@ import {
 } from "@/lib/site";
 import { cn } from "@/lib/utils";
 import { DividerTrisila } from "@/components/ui/DividerTrisila";
+import { MobileNav } from "@/components/publik/MobileNav";
 
 function TanggalHariIni() {
   const tanggal = new Date().toLocaleDateString("id-ID", {
@@ -70,7 +71,8 @@ export async function SiteHeader() {
                   href="/daftar"
                   className="bg-gmnimerah-500 px-2 py-0.5 text-white transition-colors hover:bg-gmnimerah-400"
                 >
-                  Registrasi Kader
+                  <span className="sm:hidden">Daftar</span>
+                  <span className="hidden sm:inline">Registrasi Kader</span>
                 </Link>
               </>
             )}
@@ -88,10 +90,10 @@ export async function SiteHeader() {
               alt={SITE_NAME}
               width={1456}
               height={1440}
-              className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+              className="h-9 w-9 shrink-0 object-contain sm:h-12 sm:w-12"
             />
-            <div className="leading-none">
-              <p className="font-serif text-4xl font-extrabold tracking-tight text-hitam-900 sm:text-5xl">
+            <div className="min-w-0 leading-none">
+              <p className="font-serif text-3xl font-extrabold tracking-tight text-hitam-900 sm:text-4xl lg:text-5xl">
                 info{" "}
                 <span className="italic text-gmnimerah-500">Marhaen</span>
               </p>
@@ -119,51 +121,59 @@ export async function SiteHeader() {
 
       {/* Navigasi utama — kategori */}
       <div className="border-b-2 border-hitam-900 bg-kertas-150">
-        <nav
-          aria-label="Navigasi utama"
-          className="mx-auto flex max-w-6xl items-center px-4"
-        >
-          {NAV_UTAMA.map((item) => (
-            <div key={item.href} className="relative group">
-              <Link
-                href={item.href}
-                className={cn(
-                  "flex items-center gap-1 px-3 py-2.5 font-sans text-[13px] font-semibold uppercase tracking-wider transition-colors",
-                  item.aksen
-                    ? "bg-gmnimerah-500 text-white"
-                    : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
-                )}
-              >
-                {item.label}
-                {item.href === "/berita" && (
-                  <span aria-hidden className="text-[10px]">
-                    ▾
-                  </span>
-                )}
-              </Link>
-              {item.href === "/berita" && (
-                <div className="invisible absolute left-0 top-full z-50 w-56 border border-hitam-200 bg-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
-                  {KATEGORI_BERITA.map((k) => (
-                    <Link
-                      key={k.slug}
-                      href={`/berita/${k.slug}`}
-                      className="block border-b border-hitam-100 px-4 py-2.5 text-sm font-medium text-hitam-900 last:border-b-0 hover:bg-gmnimerah-500 hover:text-white"
-                    >
-                      {k.label}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-          <Link
-            href="/cari"
-            aria-label="Cari"
-            className="ml-auto px-3 py-2.5 font-sans text-[13px] font-semibold uppercase tracking-wider text-hitam-900 hover:bg-gmnimerah-500 hover:text-white"
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between px-4">
+          <nav
+            aria-label="Navigasi utama"
+            className="hidden items-center lg:flex"
           >
-            Cari
-          </Link>
-        </nav>
+            {NAV_UTAMA.map((item) => (
+              <div key={item.href} className="relative group">
+                <Link
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-1 px-3 py-2.5 font-sans text-[13px] font-semibold uppercase tracking-wider transition-colors",
+                    item.aksen
+                      ? "bg-gmnimerah-500 text-white"
+                      : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                  )}
+                >
+                  {item.label}
+                  {item.href === "/berita" && (
+                    <span aria-hidden className="text-[10px]">
+                      ▾
+                    </span>
+                  )}
+                </Link>
+                {item.href === "/berita" && (
+                  <div className="invisible absolute left-0 top-full z-50 w-56 border border-hitam-200 bg-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:opacity-100">
+                    {KATEGORI_BERITA.map((k) => (
+                      <Link
+                        key={k.slug}
+                        href={`/berita/${k.slug}`}
+                        className="block border-b border-hitam-100 px-4 py-2.5 text-sm font-medium text-hitam-900 last:border-b-0 hover:bg-gmnimerah-500 hover:text-white"
+                      >
+                        {k.label}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            <Link
+              href="/cari"
+              aria-label="Cari"
+              className="px-3 py-2.5 font-sans text-[13px] font-semibold uppercase tracking-wider text-hitam-900 hover:bg-gmnimerah-500 hover:text-white"
+            >
+              Cari
+            </Link>
+          </nav>
+
+          <MobileNav
+            navUtama={NAV_UTAMA}
+            kategoriBerita={KATEGORI_BERITA}
+            user={{ masuk: Boolean(user), roleNama: user?.roleNama ?? null }}
+          />
+        </div>
       </div>
     </header>
   );

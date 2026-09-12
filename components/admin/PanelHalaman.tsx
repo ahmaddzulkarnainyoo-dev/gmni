@@ -13,6 +13,34 @@ export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
   const [memuat, setMemuat] = useState(false);
   const [pesan, setPesan] = useState<string | null>(null);
   const [eror, setEror] = useState<string | null>(null);
+  const [bukaBaru, setBukaBaru] = useState(false);
+  const [baruJudul, setBaruJudul] = useState("");
+  const [baruSlug, setBaruSlug] = useState("");
+  const [baruKonten, setBaruKonten] = useState("");
+
+  async function buatHalaman(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setMemuat(true);
+    setEror(null);
+    setPesan(null);
+    try {
+      const res = await fetch("/api/admin/halaman", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ judul: baruJudul, slug: baruSlug, konten: baruKonten }),
+      });
+      const data = (await res.json()) as { ok?: boolean; error?: string };
+      if (!res.ok || !data.ok) {
+        setEror(data.error ?? "Gagal membuat halaman.");
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setEror("Tidak dapat menghubungi server.");
+    } finally {
+      setMemuat(false);
+    }
+  }
 
   function gantiSlug(s: string) {
     const h = halaman.find((x) => x.slug === s);
@@ -53,7 +81,72 @@ export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
   }
 
   return (
-    <div className="mt-6 grid gap-6 lg:grid-cols-[240px_1fr]">
+    <div className="mt-6">
+      <button
+        type="button"
+        onClick={() => setBukaBaru((v) => !v)}
+        className="mb-4 bg-hitam-900 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-white hover:bg-gmnimerah-600"
+      >
+        {bukaBaru ? "Tutup Form Halaman Baru" : "+ Halaman Baru"}
+      </button>
+
+      {bukaBaru && (
+        <form
+          onSubmit={buatHalaman}
+          className="mb-6 border-2 border-hitam-900 bg-kertas-100 p-4"
+        >
+          <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+            Buat Halaman Statis Baru
+          </p>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+                Judul
+              </span>
+              <input
+                type="text"
+                required
+                value={baruJudul}
+                onChange={(e) => setBaruJudul(e.target.value)}
+                className="w-full border-2 border-hitam-900 bg-white px-3 py-2 text-sm text-hitam-900 outline-none focus:border-gmnimerah-500"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+                Slug (kosongkan = otomatis)
+              </span>
+              <input
+                type="text"
+                value={baruSlug}
+                onChange={(e) => setBaruSlug(e.target.value)}
+                className="w-full border-2 border-hitam-900 bg-white px-3 py-2 font-mono text-sm text-hitam-900 outline-none focus:border-gmnimerah-500"
+                placeholder="mis. visi-misi"
+              />
+            </label>
+          </div>
+          <label className="mt-3 block">
+            <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+              Konten (HTML)
+            </span>
+            <textarea
+              required
+              rows={6}
+              value={baruKonten}
+              onChange={(e) => setBaruKonten(e.target.value)}
+              className="w-full border-2 border-hitam-900 bg-white px-3 py-2 font-mono text-[13px] text-hitam-900 outline-none focus:border-gmnimerah-500"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={memuat}
+            className="mt-3 bg-gmnimerah-500 px-5 py-2 font-sans text-sm font-bold uppercase tracking-wide text-white hover:bg-gmnimerah-600 disabled:opacity-50"
+          >
+            Simpan Halaman Baru
+          </button>
+        </form>
+      )}
+
+      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
       <div>
         <p className="mb-2 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
           Pilih Halaman
@@ -123,6 +216,7 @@ export function PanelHalaman({ halaman }: { halaman: HalamanData[] }) {
         <p className="mt-2 text-xs text-hitam-400">
           Pratinjau langsung di rute publik, mis. /{hal.slug}.
         </p>
+      </div>
       </div>
     </div>
   );
