@@ -14,6 +14,8 @@ const MENU_ADMIN: Array<{
       { label: "Ringkasan", href: "/admin" },
       { label: "Antrian Redaksi", href: "/admin/redaksi" },
       { label: "Kelola Artikel", href: "/admin/artikel" },
+      { label: "Kategori", href: "/admin/kategori" },
+      { label: "Tag", href: "/admin/tag" },
       { label: "Moderasi Komentar", href: "/admin/komentar" },
       { label: "Laporan", href: "/admin/laporan" },
       { label: "Kelola Leaderboard", href: "/admin/leaderboard" },
