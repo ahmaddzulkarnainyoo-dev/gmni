@@ -86,7 +86,7 @@ export function TabelArtikelAdmin({
   }
 
   async function arsipkan(a: BarisArtikel) {
-    if (!window.confirm(`Arsipkan artikel "${a.judul}"?`)) return;
+    if (!confirm(`Arsipkan artikel "${a.judul}"?`)) return;
     setMemuat(a.id);
     setEror(null);
     try {

@@ -92,7 +92,7 @@ export function PanelKategori({ kategori }: { kategori: KategoriData[] }) {
   }
 
   async function hapus(k: KategoriData) {
-    if (!window.confirm(`Hapus kategori "${k.nama}"?`)) return;
+    if (!confirm(`Hapus kategori "${k.nama}"?`)) return;
     setMemuat(true);
     setEror(null);
     try {

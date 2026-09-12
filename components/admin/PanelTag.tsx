@@ -73,7 +73,7 @@ export function PanelTag({ tags }: { tags: TagData[] }) {
   }
 
   async function hapus(t: TagData) {
-    if (!window.confirm(`Hapus tag "${t.nama}"?`)) return;
+    if (!confirm(`Hapus tag "${t.nama}"?`)) return;
     setMemuat(true);
     setEror(null);
     try {

@@ -11,10 +11,10 @@ export const SITE_DESKRIPSI =
   "Portal berita digital milik GMNI. Sikap editorial: oposisi kritis terhadap kebijakan pemerintah. Ditulis oleh kader terverifikasi, dikurasi oleh redaksi.";
 
 /** Navigasi utama (blueprint Bagian 4) */
-export const NAV_UTAMA: Array<{ label: string; href: string; aksen?: boolean }> = [
+export const NAV_UTAMA: Array<{ label: string; href: string }> = [
   { label: "Beranda", href: "/" },
   { label: "Berita", href: "/berita" },
-  { label: "Marhaenisme", href: "/marhaenisme", aksen: true },
+  { label: "Marhaenisme", href: "/marhaenisme" },
   { label: "Opini", href: "/opini" },
   { label: "Kaderisasi", href: "/kaderisasi" },
   { label: "Tokoh", href: "/tokoh" },

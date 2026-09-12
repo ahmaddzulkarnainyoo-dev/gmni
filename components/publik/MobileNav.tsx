@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import { jalurAktif } from "@/components/publik/NavDesktop";
 
-type NavItem = { label: string; href: string; aksen?: boolean };
+type NavItem = { label: string; href: string };
 type KatItem = { label: string; slug: string };
 
 /** Navigasi mobile (hamburger/drawer) — cegah menu melebar di HP (Fase 3). */
@@ -18,6 +20,7 @@ export function MobileNav({
   user: { masuk: boolean; roleNama?: string | null };
 }) {
   const [buka, setBuka] = useState(false);
+  const pathname = usePathname();
 
   const taut = (cls: string, ekstra = "") =>
     cn("block px-3 py-2.5 font-sans text-sm font-semibold uppercase tracking-wider transition-colors", cls, ekstra);
@@ -48,7 +51,14 @@ export function MobileNav({
                   <Link
                     href={item.href}
                     onClick={() => setBuka(false)}
-                    className={taut(item.aksen ? "bg-gmnimerah-500 text-white" : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white")}
+                    aria-current={
+                      jalurAktif(pathname, item.href) ? "page" : undefined
+                    }
+                    className={taut(
+                      jalurAktif(pathname, item.href)
+                        ? "bg-gmnimerah-500 text-white"
+                        : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                    )}
                   >
                     {item.label}
                   </Link>
@@ -59,7 +69,17 @@ export function MobileNav({
                           <Link
                             href={`/berita/${k.slug}`}
                             onClick={() => setBuka(false)}
-                            className="block px-2 py-1.5 text-[13px] text-hitam-600 hover:text-gmnimerah-600"
+                            aria-current={
+                              pathname === `/berita/${k.slug}`
+                                ? "page"
+                                : undefined
+                            }
+                            className={cn(
+                              "block px-2 py-1.5 text-[13px] hover:text-gmnimerah-600",
+                              pathname === `/berita/${k.slug}`
+                                ? "bg-gmnimerah-100 font-bold text-gmnimerah-600"
+                                : "text-hitam-600",
+                            )}
                           >
                             {k.label}
                           </Link>
@@ -73,7 +93,14 @@ export function MobileNav({
                 <Link
                   href="/cari"
                   onClick={() => setBuka(false)}
-                  className={taut("text-hitam-900 hover:bg-gmnimerah-500 hover:text-white")}
+                    aria-current={
+                      jalurAktif(pathname, "/cari") ? "page" : undefined
+                    }
+                    className={taut(
+                      jalurAktif(pathname, "/cari")
+                        ? "bg-gmnimerah-500 text-white"
+                        : "text-hitam-900 hover:bg-gmnimerah-500 hover:text-white",
+                    )}
                 >
                   Cari
                 </Link>
