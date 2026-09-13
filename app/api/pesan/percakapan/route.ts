@@ -1,22 +1,22 @@
-import type { Metadata } from "next";
-import { requirePermission } from "@/lib/session";
+import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { RuangObrolan } from "@/components/dasbor/pesan/RuangObrolan";
+import { getSessionUser } from "@/lib/session";
 
-export const metadata: Metadata = { title: "Pesan" };
-export const dynamic = "force-dynamic";
-
-/**
- * DM antar kader — /dasbor/pesan (blueprint 8.5).
- * Prefetch daftar room di server, interaksi + polling di client.
- */
-export default async function HalamanPesan({
-  searchParams,
-}: {
-  searchParams: Promise<{ dengan?: string }>;
-}) {
-  const user = await requirePermission("pesan.kirim");
-  const { dengan } = await searchParams;
+/** GET /api/pesan/percakapan — daftar room aktif milikku (blueprint 8.5). */
+export async function GET() {
+  const user = await getSessionUser();
+  if (!user) {
+    return NextResponse.json(
+      { error: "Harus masuk terlebih dahulu." },
+      { status: 401 },
+    );
+  }
+  if (!user.permissions.includes("pesan.kirim")) {
+    return NextResponse.json(
+      { error: "Akun Anda tidak memiliki izin berkirim pesan." },
+      { status: 403 },
+    );
+  }
 
   const keanggotaan = await prisma.anggotaPercakapan.findMany({
     where: { userId: user.id },
@@ -45,6 +45,7 @@ export default async function HalamanPesan({
             select: {
               id: true,
               isi: true,
+              status: true,
               tanggal: true,
               pengirimId: true,
             },
@@ -54,7 +55,7 @@ export default async function HalamanPesan({
     },
   });
 
-  const awal = await Promise.all(
+  const percakapan = await Promise.all(
     keanggotaan.map(async (a) => {
       const lawan = a.percakapan.anggota[0]?.user ?? null;
       const terakhir = a.percakapan.pesan[0] ?? null;
@@ -70,33 +71,13 @@ export default async function HalamanPesan({
         : 0;
       return {
         id: a.percakapanId,
-        pesanTerakhirAt: a.percakapan.pesanTerakhirAt?.toISOString() ?? null,
+        pesanTerakhirAt: a.percakapan.pesanTerakhirAt,
         lawan,
-        pesanTerakhir: terakhir
-          ? {
-              isi: terakhir.isi,
-              tanggal: terakhir.tanggal.toISOString(),
-              pengirimId: terakhir.pengirimId,
-            }
-          : null,
+        pesanTerakhir: terakhir,
         belumDibaca,
       };
     }),
   );
 
-  return (
-    <div className="mx-auto max-w-5xl">
-      <div className="border-b-2 border-hitam-900 pb-3">
-        <h1 className="font-serif text-2xl font-extrabold text-hitam-900 md:text-3xl">
-          Pesan Kader
-        </h1>
-        <p className="mt-1 text-sm text-hitam-500">
-          Obrolan langsung 1-on-1 antar kader — privat, bukan untuk publik.
-        </p>
-      </div>
-      <div className="mt-6">
-        <RuangObrolan userId={user.id} awal={awal} denganUsername={dengan} />
-      </div>
-    </div>
-  );
+  return NextResponse.json({ percakapan });
 }

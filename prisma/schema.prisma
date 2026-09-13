@@ -54,6 +54,12 @@ enum StatusKomentar {
   DISEMBUNYIKAN
 }
 
+/// Status kirim pesan langsung 1-on-1 (blueprint 8.5): read receipt.
+enum StatusPesan {
+  TERKIRIM /// baru dikirim, belum dibaca lawan
+  DIBACA /// lawan sudah membuka riwayat
+}
+
 // ============================================================
 // 7.1 USER — kader terverifikasi
 // ============================================================
@@ -86,6 +92,8 @@ model User {
   tokohDibuat       Tokoh[]    @relation("TokohDibuatOleh")
   auditLogs         AuditLog[]
   komentar          Komentar[]
+  keanggotaanPercakapan AnggotaPercakapan[]
+  pesanTerkirim     Pesan[] @relation("PesanTerkirim")
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -237,6 +245,54 @@ model Komentar {
   @@index([status])
   @@index([jumlahLaporan])
   @@index([tanggal])
+}
+
+// ============================================================
+// 7.6 PESAN LANGSUNG — DM 1-on-1 antar kader (Fase 3 · blueprint 8.5)
+// ============================================================
+
+/// Ruang obrolan 1-on-1 antar dua kader.
+model Percakapan {
+  id              String               @id @default(cuid())
+  /// Penanda aktivitas terakhir — sort daftar room tanpa join MAX().
+  pesanTerakhirAt DateTime?
+  anggota         AnggotaPercakapan[]
+  pesan           Pesan[]
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  @@index([pesanTerakhirAt])
+  @@index([updatedAt])
+}
+
+/// Keanggotaan room — tepat 2 baris per percakapan 1-on-1.
+model AnggotaPercakapan {
+  percakapanId    String
+  percakapan      Percakapan @relation(fields: [percakapanId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Cursor badge unread + read-receipt per pihak.
+  terakhirDibacaAt DateTime?
+  tanggalBergabung DateTime  @default(now())
+
+  /// Kunci gabungan mencegah duplikat + jadi kunci dedup 1-on-1.
+  @@id([percakapanId, userId])
+  @@index([userId])
+  @@index([percakapanId])
+}
+
+model Pesan {
+  id           String      @id @default(cuid())
+  percakapanId String
+  percakapan   Percakapan  @relation(fields: [percakapanId], references: [id], onDelete: Cascade)
+  pengirimId   String
+  pengirim     User        @relation("PesanTerkirim", fields: [pengirimId], references: [id], onDelete: Cascade)
+  isi          String      @db.Text /// divalidasi 1–2000 karakter di API
+  status       StatusPesan @default(TERKIRIM)
+  tanggal      DateTime    @default(now())
+
+  @@index([percakapanId, tanggal])
+  @@index([pengirimId])
 }
 
 // ============================================================
