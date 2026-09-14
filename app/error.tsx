@@ -1,3 +1,5 @@
+"use client";
+
 import { GmniError } from "@/components/ui/GmniError";
 
 /** Error boundary root (Next 16: client component + retry). */

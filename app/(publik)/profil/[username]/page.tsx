@@ -132,7 +132,7 @@ export default async function HalamanProfil({
     select: PILIH_ARTIKEL_PUBLIK,
   });
 
-  // Badge publik (lazily, blueprint 8.4) — hanya untuk profil terbuka.
+  // Badge publik (lazily, blueprint 8.4) â€” hanya untuk profil terbuka.
   await evaluasiBadgeKader(profil.id);
   const lencana = await prisma.pencapaian.findMany({
     where: { userId: profil.id },
@@ -223,7 +223,7 @@ export default async function HalamanProfil({
         ) : (
           <div className="mt-4 flex flex-wrap gap-2">
             {lencana.map((b) => (
-              <span key={b.id} title={(LABEL_BADGE[b.jenisBadge] ?? b.jenisBadge) + ` — ` + b.periode} className="border-2 border-hitam-900 bg-white px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-700">
+              <span key={b.id} title={(LABEL_BADGE[b.jenisBadge] ?? b.jenisBadge) + ` â€” ` + b.periode} className="border-2 border-hitam-900 bg-white px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-700">
                 ? {LABEL_BADGE[b.jenisBadge] ?? b.jenisBadge}
               </span>
             ))}

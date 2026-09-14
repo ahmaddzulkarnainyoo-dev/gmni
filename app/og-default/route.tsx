@@ -5,10 +5,10 @@ import { ImageResponse } from "next/og";
  * gambar — 1200x630, tema pers GMNI (hitam + merah + serif).
  */
 
-export const contentType = "image/png";
+
 export const dynamic = "force-static";
 
-export default function OgDefault() {
+export function GET() {
   return new ImageResponse(
     (
       <div

@@ -1,3 +1,5 @@
+"use client";
+
 import { GmniError } from "@/components/ui/GmniError";
 
 /** Error boundary area admin (tetap di dalam gate role layout). */
