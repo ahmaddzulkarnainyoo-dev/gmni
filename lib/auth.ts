@@ -2,19 +2,50 @@ import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import {
+  normalisasiKodePemulihan,
+  verifikasiTotp,
+} from "@/lib/totp";
 
 /**
  * Konfigurasi NextAuth/Auth.js info Marhaen.
  *
- * Strategi: Credentials (email + sandi) + sesi JWT. Pengguna divalidasi
- * langsung terhadap tabel User (Prisma), sandi dicek dengan bcryptjs.
- * Informasi role + permission disematkan ke token JWT agar RBAC
+ * Strategi: Credentials (email + sandi [+ OTP 2FA]) + sesi JWT. Pengguna
+ * divalidasi langsung terhadap tabel User (Prisma), sandi dicek dengan
+ * bcryptjs. Informasi role + permission disematkan ke token JWT agar RBAC
  * (blueprint Bagian 5) bisa dijalankan di server tanpa query DB berulang.
+ *
+ * 2FA TOTP (Sub-Fase 4.2, kebijakan opsional): bila `is2FAEnabled` true,
+ * `authorize` melempar Error("OTP_REQUIRED") saat kode belum disertakan,
+ * Error("OTP_INVALID") saat kode salah, dan Error("OTP_TERKUNCI") saat
+ * akun dikunci sementara akibat 5x gagal beruntun (15 menit). Melempar
+ * Error (bukan return null) agar pesan spesifik sampai ke client —
+ * klien NextAuth memakai `error.message` sebagai kode error redirect.
  */
+
+// Batas brute-force OTP: 5x gagal → kunci 15 menit.
+const BATAS_GAGAL_OTP = 5;
+const DURASI_KUNCI_MS = 15 * 60 * 1000;
+
 export const authOptions: NextAuthOptions = {
   session: { strategy: "jwt" },
   secret:
     process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET ?? "info-marhaen-dev-secret",
+  cookies: {
+    sessionToken: {
+      name:
+        process.env.NODE_ENV === "production" &&
+        (process.env.NEXTAUTH_URL?.startsWith("https://") ?? true)
+          ? "__Secure-next-auth.session-token"
+          : "next-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: process.env.NODE_ENV === "production",
+      },
+    },
+  },
   pages: {
     signIn: "/login",
     error: "/login",
@@ -25,6 +56,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Sandi", type: "password" },
+        otpToken: { label: "Kode 2FA", type: "text" },
       },
       async authorize(credentials) {
         const email = credentials?.email?.toLowerCase().trim();
@@ -41,6 +73,67 @@ export const authOptions: NextAuthOptions = {
 
         const cocok = await compare(sandi, user.passwordHash);
         if (!cocok) return null;
+
+        // Gate 2FA: hanya untuk akun yang mengaktifkannya (opsional).
+        if (user.is2FAEnabled && user.totpSecret) {
+          if (user.totpKunciSampai && user.totpKunciSampai > new Date()) {
+            throw new Error("OTP_TERKUNCI");
+          }
+          const otp = (credentials?.otpToken ?? "").replace(/[\s-]/g, "");
+          if (!otp) throw new Error("OTP_REQUIRED");
+
+          let sah = verifikasiTotp(user.totpSecret, otp);
+
+          // Fallback: kode pemulihan sekali pakai (bcrypt hash, dikonsumsi).
+          let indeksPemulihan = -1;
+          if (!sah && user.recoveryKodes.length > 0) {
+            const normal = normalisasiKodePemulihan(otp);
+            for (let i = 0; i < user.recoveryKodes.length; i += 1) {
+              // Bandingkan dengan & tanpa strip agar kode lama tetap valid.
+              if (
+                (await compare(normal, user.recoveryKodes[i])) ||
+                (await compare(otp.toUpperCase(), user.recoveryKodes[i]))
+              ) {
+                indeksPemulihan = i;
+                break;
+              }
+            }
+            if (indeksPemulihan >= 0) sah = true;
+          }
+
+          if (!sah) {
+            const gagal = user.totpUpayaGagal + 1;
+            await prisma.user.update({
+              where: { id: user.id },
+              data:
+                gagal >= BATAS_GAGAL_OTP
+                  ? {
+                      totpUpayaGagal: 0,
+                      totpKunciSampai: new Date(Date.now() + DURASI_KUNCI_MS),
+                    }
+                  : { totpUpayaGagal: gagal },
+            });
+            throw new Error(
+              gagal >= BATAS_GAGAL_OTP ? "OTP_TERKUNCI" : "OTP_INVALID",
+            );
+          }
+
+          // Kode sah: reset limiter; konsumsi kode pemulihan bila dipakai.
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              totpUpayaGagal: 0,
+              totpKunciSampai: null,
+              ...(indeksPemulihan >= 0
+                ? {
+                    recoveryKodes: user.recoveryKodes.filter(
+                      (_, i) => i !== indeksPemulihan,
+                    ),
+                  }
+                : {}),
+            },
+          });
+        }
 
         return {
           id: user.id,

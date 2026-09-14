@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { PILIH_ARTIKEL_PUBLIK, bylineArtikel, fmtTanggal } from "@/lib/articles";
+import { LABEL_BADGE, evaluasiBadgeKader } from "@/lib/gamifikasi";
 import { KartuArtikel } from "@/components/ui/KartuArtikel";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 
@@ -131,6 +132,14 @@ export default async function HalamanProfil({
     select: PILIH_ARTIKEL_PUBLIK,
   });
 
+  // Badge publik (lazily, blueprint 8.4) — hanya untuk profil terbuka.
+  await evaluasiBadgeKader(profil.id);
+  const lencana = await prisma.pencapaian.findMany({
+    where: { userId: profil.id },
+    orderBy: { tanggalDiperoleh: 'desc' },
+    take: 12,
+  });
+
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 md:py-14">
       <KickerLabel>Profil Kader</KickerLabel>
@@ -200,6 +209,26 @@ export default async function HalamanProfil({
             </Link>
           )}
         </div>
+      </section>
+
+      <section className="mt-12">
+        <KickerLabel>Lencana Perjuangan</KickerLabel>
+        <h2 className="mt-2 font-serif text-2xl font-extrabold text-hitam-900">
+          Trophy Case <span className="text-gmnimerah-600">({lencana.length})</span>
+        </h2>
+        {lencana.length === 0 ? (
+          <p className="mt-4 text-sm italic text-hitam-400">
+            Kader ini belum meraih lencana.
+          </p>
+        ) : (
+          <div className="mt-4 flex flex-wrap gap-2">
+            {lencana.map((b) => (
+              <span key={b.id} title={(LABEL_BADGE[b.jenisBadge] ?? b.jenisBadge) + ` — ` + b.periode} className="border-2 border-hitam-900 bg-white px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-700">
+                ? {LABEL_BADGE[b.jenisBadge] ?? b.jenisBadge}
+              </span>
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-12">

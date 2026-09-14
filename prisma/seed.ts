@@ -43,6 +43,7 @@ const PERMISSIONS: Array<{ kode: string; deskripsi: string }> = [
   { kode: "leaderboard.override", deskripsi: "Mengatur pemenang Penulis Terbaik" },
   { kode: "laporan.tinjau", deskripsi: "Meninjau laporan penyalahgunaan" },
   { kode: "audit_log.lihat", deskripsi: "Melihat jejak audit" },
+  { kode: "monetisasi.kelola", deskripsi: "Mengelola slot iklan & donasi" },
   {
     kode: "wilayah.kelola_kanal_daerah",
     deskripsi: "Mengelola kanal daerah/DPC (disiapkan untuk fase future)",
@@ -69,6 +70,7 @@ const KODE_EDITOR = [
   "leaderboard.override",
   "laporan.tinjau",
   "audit_log.lihat",
+  "monetisasi.kelola",
 ];
 const KODE_KONTRIBUTOR = [
   "artikel.buat",

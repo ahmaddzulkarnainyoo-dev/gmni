@@ -7,6 +7,7 @@ import {
   bolehMulaiPercakapanBaru,
   cariPercakapanSatuLawanSatu,
 } from "@/lib/dm";
+import { catatAktivitas, perbaruiStreak } from "@/lib/gamifikasi";
 
 const BATAS_KIRIM_PER_MENIT = 20;
 
@@ -92,6 +93,10 @@ export async function POST(request: Request) {
         data: { pesanTerakhirAt: sekarang },
       }),
     ]);
+    // Aktivitas harian pengirim (best-effort, blueprint 8.4).
+    catatAktivitas(user.id, "AKTIF_HARIAN")
+      .then(() => perbaruiStreak(user.id))
+      .catch(() => undefined);
     return NextResponse.json(
       { ok: true, percakapanId: body.percakapanId, pesan },
       { status: 201 },
@@ -131,6 +136,10 @@ export async function POST(request: Request) {
         data: { pesanTerakhirAt: sekarang },
       }),
     ]);
+    // Aktivitas harian pengirim (best-effort, blueprint 8.4).
+    catatAktivitas(user.id, "AKTIF_HARIAN")
+      .then(() => perbaruiStreak(user.id))
+      .catch(() => undefined);
     return NextResponse.json(
       { ok: true, percakapanId: lama, pesan },
       { status: 201 },
@@ -156,6 +165,11 @@ export async function POST(request: Request) {
     },
     include: { pesan: { orderBy: { tanggal: "asc" }, take: 1 } },
   });
+
+  // Aktivitas harian pengirim (best-effort, blueprint 8.4).
+  catatAktivitas(user.id, "AKTIF_HARIAN")
+    .then(() => perbaruiStreak(user.id))
+    .catch(() => undefined);
 
   return NextResponse.json(
     { ok: true, percakapanId: dibuat.id, pesan: dibuat.pesan[0] ?? null },

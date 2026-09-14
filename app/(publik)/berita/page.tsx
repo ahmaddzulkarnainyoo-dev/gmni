@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { KartuArtikel } from "@/components/ui/KartuArtikel";
 import { KickerLabel } from "@/components/ui/KickerLabel";
+import { SlotIklanSidebar } from "@/components/publik/SlotIklanSidebar";
 import { bylineArtikel, fmtTanggal } from "@/lib/articles";
 
 export const metadata: Metadata = { title: "Berita" };
@@ -63,19 +64,26 @@ export default async function HalamanBerita() {
           </p>
         </div>
       ) : (
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {artikel.map((a) => (
-            <KartuArtikel
-              key={a.id}
-              judul={a.judul}
-              ringkasan={a.ringkasan ?? undefined}
-              kategori={{ nama: a.kategori.nama, slug: a.kategori.slug }}
-              tanggal={fmtTanggal(a.tanggalTerbit)}
-              penulis={bylineArtikel(a).nama}
-              gambar={a.gambarUtama}
-              slug={a.slug}
-            />
-          ))}
+        <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+          <div className="grid gap-6 md:grid-cols-3">
+            {artikel.map((a) => (
+              <KartuArtikel
+                key={a.id}
+                judul={a.judul}
+                ringkasan={a.ringkasan ?? undefined}
+                kategori={{ nama: a.kategori.nama, slug: a.kategori.slug }}
+                tanggal={fmtTanggal(a.tanggalTerbit)}
+                penulis={bylineArtikel(a).nama}
+                gambar={a.gambarUtama}
+                slug={a.slug}
+              />
+            ))}
+          </div>
+          <div className="hidden lg:block">
+            <div className="sticky top-4">
+              <SlotIklanSidebar />
+            </div>
+          </div>
         </div>
       )}
     </div>

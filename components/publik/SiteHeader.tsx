@@ -11,6 +11,7 @@ import {
 import { MobileNav } from "@/components/publik/MobileNav";
 import { NavDesktop } from "@/components/publik/NavDesktop";
 import { TickerBerita } from "@/components/publik/TickerBerita";
+import { SlotIklanHeader } from "@/components/publik/SlotIklanHeader";
 import { prisma } from "@/lib/prisma";
 
 function TanggalHariIni() {
@@ -144,6 +145,9 @@ export async function SiteHeader() {
           />
         </div>
       </div>
+
+      {/* Slot iklan header — bar non-intrusif (Fase 4.1), render bila ada banner tayang */}
+      <SlotIklanHeader />
     </header>
   );
 }

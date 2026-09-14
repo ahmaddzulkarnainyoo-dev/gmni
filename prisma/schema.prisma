@@ -60,6 +60,43 @@ enum StatusPesan {
   DIBACA /// lawan sudah membuka riwayat
 }
 
+/// Jenis aktivitas kader yang menghasilkan poin (blueprint 8.4).
+/// Nilai poin: ARTIKEL_TERBIT=10, KOMENTAR_TAMPIL=2, AKTIF_HARIAN=1.
+enum JenisAktivitas {
+  ARTIKEL_TERBIT /// artikel ASLI (bukan samaran/redaksi) yang terbit
+  KOMENTAR_TAMPIL /// komentar kader berstatus TAMPIL
+  AKTIF_HARIAN /// kehadiran/aktivitas harian kader (maks 1/hari)
+}
+
+/// Kategori peringkat mingguan (blueprint 7.7).
+enum KategoriPeringkat {
+  POIN_UMUM /// total poin gabungan minggu berjalan
+  PENULIS_TERAJIN /// jumlah artikel ASLI terbit minggu ini
+  AKTIF_DISKUSI /// jumlah komentar TAMPIL minggu ini
+  PEMBACA_TERAKTIF /// disiapkan — butuh tracking baca per-user (sub-fase lanjutan)
+  PALING_SHARE /// disiapkan — butuh tracking klik share (sub-fase lanjutan)
+}
+
+/// Status tayang slot iklan mandiri (Fase 4.1 · blueprint Fase 4).
+enum StatusIklan {
+  DRAFT /// disiapkan, belum tayang
+  AKTIF /// tayang publik bila dalam rentang tanggal
+  DIARSIPKAN /// ditarik dari tayang tanpa dihapus
+}
+
+/// Lokasi slot iklan non-intrusif di layout publik (Fase 4.1).
+enum LokasiSlotIklan {
+  HEADER /// bar tipis di bawah navigasi utama
+  SIDEBAR /// kartu samping di halaman artikel/berita
+}
+
+/// Status verifikasi donasi pers Marhaen (Fase 4.1 · verifikasi manual v1).
+enum StatusDonasi {
+  MENUNGGU_VERIFIKASI /// baru masuk, belum diverifikasi admin
+  TERVERIFIKASI /// sah, masuk widget transparansi publik
+  DITOLAK /// spam/tidak valid, disembunyikan dari publik
+}
+
 // ============================================================
 // 7.1 USER — kader terverifikasi
 // ============================================================
@@ -78,6 +115,13 @@ model User {
   role              Role     @relation(fields: [roleId], references: [id])
   statusAkun        StatusAkun @default(AKTIF)
   profilTersembunyi Boolean  @default(false) /// toggle sembunyikan dari cari & DM (6.2)
+  totpPendingSecret String?  /// secret tentatif TOTP saat wizard setup (4.2)
+  totpSecret        String?  /// secret aktif TOTP (RFC 6238, base32)
+  is2FAEnabled      Boolean  @default(false) /// 2FA TOTP aktif
+  totpAktivasiAt    DateTime?
+  totpUpayaGagal    Int      @default(0) /// limiter brute-force OTP (5x → kunci 15 mnt)
+  totpKunciSampai   DateTime?
+  recoveryKodes     String[] /// hash bcrypt kode pemulihan (tampil 1x saat setup)
   diundangOlehId    String?
   diundangOleh      User?    @relation("RelasiUndangan", fields: [diundangOlehId], references: [id])
   undangan          User[]   @relation("RelasiUndangan")
@@ -94,6 +138,12 @@ model User {
   komentar          Komentar[]
   keanggotaanPercakapan AnggotaPercakapan[]
   pesanTerkirim     Pesan[] @relation("PesanTerkirim")
+  kegiatan          KegiatanKader[] @relation("KegiatanKader")
+  streak            StreakKader? @relation("StreakKader")
+  pencapaian        Pencapaian[] @relation("Pencapaian")
+  peringkat         PeringkatMingguan[] @relation("PeringkatMingguan")
+  iklanDibuat       Iklan[] @relation("IklanDibuatOleh")
+  donasiDiverifikasi Donasi[] @relation("DonasiDiverifikasiOleh")
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -296,6 +346,71 @@ model Pesan {
 }
 
 // ============================================================
+// 7.7 GAMIFIKASI — ledger poin, streak, badge & snapshot (Fase 3.2 · blueprint 8.4)
+// Reset mingguan dihitung lewat jendela tanggal (Senin 00:00 WIB) —
+// tanpa cron; badge tersimpan permanen sebagai trophy case.
+// ============================================================
+
+model KegiatanKader {
+  id          String         @id @default(cuid())
+  userId      String
+  user        User           @relation("KegiatanKader", fields: [userId], references: [id], onDelete: Cascade)
+  jenis       JenisAktivitas
+  poin        Int
+  /// Referensi sumber poin (id artikel/komentar) — untuk retraksi moderasi.
+  detail      String?
+  /// Tanggal hari (UTC, @db.Date) — untuk dedup AKTIF_HARIAN 1x/hari.
+  tanggalHari DateTime       @db.Date
+  tanggal     DateTime       @default(now())
+
+  @@unique([userId, jenis, tanggalHari])
+  @@index([userId, tanggal])
+  @@index([jenis, tanggal])
+}
+
+model StreakKader {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  user               User     @relation("StreakKader", fields: [userId], references: [id], onDelete: Cascade)
+  jumlahHariBeruntun Int      @default(0)
+  /// Hari terakhir tercatat aktif (UTC date).
+  hariTerakhirAktif  DateTime @db.Date
+  updatedAt          DateTime @updatedAt
+}
+
+model Pencapaian {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation("Pencapaian", fields: [userId], references: [id], onDelete: Cascade)
+  /// Contoh: "ARTIKEL_FIRST" | "ARTIKEL_10" | "KOMENTAR_10" | "KOMENTAR_50"
+  /// | "STREAK_3" | "STREAK_7" | "STREAK_30" | "TOP_3_MINGGU".
+  jenisBadge        String
+  /// Periode perolehan: "SEMUA" untuk lifetime, "2026-W37" untuk mingguan.
+  periode           String
+  tanggalDiperoleh  DateTime @default(now())
+
+  @@unique([userId, jenisBadge, periode])
+  @@index([userId])
+}
+
+model PeringkatMingguan {
+  id                 String            @id @default(cuid())
+  mingguMulai        DateTime
+  mingguSelesai      DateTime
+  kategori           KategoriPeringkat
+  userId             String
+  user               User              @relation("PeringkatMingguan", fields: [userId], references: [id], onDelete: Cascade)
+  skor               Int
+  peringkat          Int
+  /// Khusus kategori manual (Penulis Terbaik) — FK admin pemilih (sub-fase lanjutan).
+  dipilihManualOlehId String?
+  createdAt          DateTime          @default(now())
+
+  @@unique([mingguMulai, kategori, userId])
+  @@index([mingguMulai, kategori, peringkat])
+}
+
+// ============================================================
 // 7.9 HALAMAN STATIS — konten no-code, editable admin (Bagian 12)
 // ============================================================
 
@@ -335,6 +450,47 @@ model Tokoh {
 
   @@index([status])
   @@index([urutan])
+}
+
+// ============================================================
+// 7.11 IKLAN MANDIRI & DONASI PERS MARHAEN (Fase 4.1 · blueprint Fase 4)
+// Banner non-intrusif di 2 slot (HEADER/SIDEBAR) + donasi publik
+// dengan verifikasi manual admin (MENUNGGU → TERVERIFIKASI/DITOLAK).
+// ============================================================
+
+model Iklan {
+  id             String         @id @default(cuid())
+  nama           String
+  gambarUrl      String /// banner (upload /api/media atau URL manual)
+  tautanUrl      String /// tujuan klik — divalidasi http(s) di API
+  lokasiSlot     LokasiSlotIklan
+  urutan         Int            @default(0) /// urutan tampil dalam slot
+  tanggalMulai   DateTime?
+  tanggalSelesai DateTime? /// AKTIF di luar rentang tidak dirender
+  status         StatusIklan    @default(DRAFT)
+  jumlahKlik     Int            @default(0)
+  dibuatOlehId   String?
+  dibuatOleh     User?          @relation("IklanDibuatOleh", fields: [dibuatOlehId], references: [id])
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([status, lokasiSlot])
+}
+
+model Donasi {
+  id               String       @id @default(cuid())
+  namaDonatur      String /// 2–80 karakter
+  nominal          Int /// Rupiah, min 1000
+  pesan            String?      @db.Text /// maks 500 karakter
+  status           StatusDonasi @default(MENUNGGU_VERIFIKASI)
+  verifikasiOlehId String?
+  verifikasiOleh   User?        @relation("DonasiDiverifikasiOleh", fields: [verifikasiOlehId], references: [id])
+  verifikasiAt     DateTime?
+
+  createdAt        DateTime     @default(now())
+
+  @@index([status, createdAt])
 }
 
 // ============================================================

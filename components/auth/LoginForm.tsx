@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import Link from "next/link";
 
-/** Formulir masuk (Credentials) — dikirim ke endpoint NextAuth. */
+/** Formulir masuk (Credentials + langkah 2FA) — dikirim ke endpoint NextAuth. */
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -14,6 +14,8 @@ export function LoginForm() {
 
   const [email, setEmail] = useState("");
   const [sandi, setSandi] = useState("");
+  const [otp, setOtp] = useState("");
+  const [langkahOtp, setLangkahOtp] = useState(false);
   const [memuat, setMemuat] = useState(false);
   const [eror, setEror] = useState<string | null>(null);
 
@@ -25,8 +27,30 @@ export function LoginForm() {
       redirect: false,
       email,
       password: sandi,
+      ...(langkahOtp ? { otpToken: otp } : {}),
     });
     if (hasil?.error) {
+      if (hasil.error === "OTP_REQUIRED") {
+        // Sandi benar, akun ber-2FA: lanjut ke langkah kode 6 digit.
+        setLangkahOtp(true);
+        setMemuat(false);
+        return;
+      }
+      if (hasil.error === "OTP_INVALID") {
+        setEror("Kode keamanan 6 digit tidak valid. Coba lagi.");
+        setMemuat(false);
+        return;
+      }
+      if (hasil.error === "OTP_TERKUNCI") {
+        setEror(
+          "Terlalu banyak kode salah. Akun dikunci 15 menit sebelum bisa mencoba lagi.",
+        );
+        setMemuat(false);
+        return;
+      }
+      // Kembali ke langkah awal bila kredensial dasar yang salah.
+      setLangkahOtp(false);
+      setOtp("");
       setEror("Email atau sandi salah. Pastikan akun berstatus aktif.");
       setMemuat(false);
       return;
@@ -85,11 +109,38 @@ export function LoginForm() {
 
       <button
         type="submit"
-        disabled={memuat}
+        disabled={memuat || (langkahOtp && otp.trim().length === 0)}
         className="w-full bg-gmnimerah-500 px-5 py-3 font-sans text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-gmnimerah-600 disabled:opacity-50"
       >
-        {memuat ? "Memeriksa..." : "Masuk"}
+        {memuat
+          ? "Memeriksa..."
+          : langkahOtp
+            ? "Verifikasi Kode"
+            : "Masuk"}
       </button>
+
+      {langkahOtp && (
+        <label className="block">
+          <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+            Kode Keamanan 6 Digit
+          </span>
+          <input
+            type="text"
+            required
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            autoFocus
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            className="w-full border-2 border-hitam-900 bg-white px-3 py-2 text-center font-mono text-xl font-bold tracking-[0.5em] text-hitam-900 outline-none transition-colors focus:border-gmnimerah-500"
+            placeholder="••••••"
+          />
+          <span className="mt-1 block text-xs text-hitam-500">
+            Buka aplikasi authenticator kamu, atau pakai salah satu kode
+            pemulihan bila perangkat hilang.
+          </span>
+        </label>
+      )}
 
       <p className="pt-1 text-center text-sm text-hitam-500">
         Lupa sandi?{" "}

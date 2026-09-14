@@ -78,8 +78,9 @@ export async function POST(request: Request) {
         penulisId: user.id,
         visibilitasPenulis: visibilitas,
         namaTampilanKustom: namaSamaran,
-        // Prinsip anonimitas (blueprint 6.2): samaran DILARANG masuk gamifikasi.
-        dikecualikanDariLeaderboard: visibilitas === "SAMARAN",
+        // Prinsip anonimitas (blueprint 6.2 & 8.4): SAMARAN & REDAKSI
+        // DILARANG masuk gamifikasi.
+        dikecualikanDariLeaderboard: visibilitas !== "ASLI",
         status: bermintaSubmit ? "DIAJUKAN" : "DRAFT",
         tanggalDiajukan: bermintaSubmit ? new Date() : null,
         tags: {

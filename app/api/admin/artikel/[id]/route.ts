@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { mdKeHtml } from "@/lib/markdown";
 import type { StatusArtikel, VisibilitasPenulis } from "@prisma/client";
+import { catatAktivitas, evaluasiBadgeKader, perbaruiStreak, tarikPoinEntitas } from "@/lib/gamifikasi";
 
 const ROLES_ADMIN = ["Super Admin", "Editor"];
 const VISIBILITAS: VisibilitasPenulis[] = ["ASLI", "SAMARAN", "REDAKSI"];
@@ -122,7 +123,7 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      data.dikecualikanDariLeaderboard = v === "SAMARAN";
+      data.dikecualikanDariLeaderboard = v !== "ASLI"; // SAMARAN & REDAKSI dikecualikan (blueprint 8.4).
     }
 
     if (body.disematkan !== undefined) data.disematkan = body.disematkan === true;
@@ -186,6 +187,30 @@ export async function PATCH(
       return diperbarui;
     });
 
+    // Poin penerbitan (disetujui penuh): transisi pertama ke TERBIT dengan
+    // visibilitas ASLI memberi poin; penarikan dari TERBIT menariknya kembali.
+    const visibilitasAkhir =
+      (data.visibilitasPenulis as VisibilitasPenulis | undefined) ??
+      artikel.visibilitasPenulis;
+    const dikecualikanAkhir =
+      (data.dikecualikanDariLeaderboard as boolean | undefined) ??
+      artikel.dikecualikanDariLeaderboard;
+    if (statusLama !== "TERBIT" && hasil.status === "TERBIT") {
+      if (visibilitasAkhir === "ASLI" && !dikecualikanAkhir) {
+        const penulisId = hasil.penulisId;
+        catatAktivitas(penulisId, "ARTIKEL_TERBIT", { detail: hasil.id })
+          .then(() => catatAktivitas(penulisId, "AKTIF_HARIAN"))
+          .then(() => perbaruiStreak(penulisId))
+          .then(() => evaluasiBadgeKader(penulisId))
+          .catch(() => undefined);
+      }
+    } else if (
+      statusLama === "TERBIT" &&
+      (hasil.status === "DIARSIPKAN" || hasil.status === "DITOLAK")
+    ) {
+      tarikPoinEntitas(hasil.id).catch(() => undefined);
+    }
+
     return NextResponse.json({
       ok: true,
       id: hasil.id,
@@ -231,6 +256,9 @@ export async function DELETE(
       },
     }),
   ]);
+
+  // Retraksi poin arsip (disetujui penuh) — best-effort.
+  if (artikel.status === "TERBIT") tarikPoinEntitas(id).catch(() => undefined);
 
   return NextResponse.json({ ok: true });
 }

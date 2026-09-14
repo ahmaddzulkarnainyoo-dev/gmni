@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
 import { verifikasiRecaptcha } from "@/lib/recaptcha";
+import { catatAktivitas, evaluasiBadgeKader, perbaruiStreak } from "@/lib/gamifikasi";
 
 /**
  * POST /api/komentar — terima komentar publik artikel (blueprint 8.3).
@@ -88,6 +89,15 @@ export async function POST(request: Request) {
         data: { jumlahKomentar: { increment: 1 } },
       }),
     ]);
+
+    // Poin kader (fire-and-forget, blueprint 8.4): hanya komentator login.
+    if (penulisId) {
+      catatAktivitas(penulisId, "KOMENTAR_TAMPIL", { detail: komentar.id })
+        .then(() => catatAktivitas(penulisId, "AKTIF_HARIAN"))
+        .then(() => perbaruiStreak(penulisId))
+        .then(() => evaluasiBadgeKader(penulisId))
+        .catch(() => undefined);
+    }
 
     return NextResponse.json({ ok: true, id: komentar.id });
   } catch (error) {

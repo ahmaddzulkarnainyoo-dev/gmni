@@ -7,6 +7,7 @@ import { getSessionUser } from "@/lib/session";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 import { KartuArtikel } from "@/components/ui/KartuArtikel";
 import { BagianKomentar } from "@/components/publik/BagianKomentar";
+import { SlotIklanSidebar } from "@/components/publik/SlotIklanSidebar";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +29,7 @@ export async function generateMetadata({
       title: artikel.judul,
       description: artikel.ringkasan ?? undefined,
       type: "article",
-      ...(artikel.gambarUtama ? { images: [artikel.gambarUtama] } : {}),
+      images: [artikel.gambarUtama ?? "/og-default"],
     },
   };
 }
@@ -87,8 +88,10 @@ export default async function HalamanArtikel({
   ]);
 
   return (
-    <article className="mx-auto max-w-3xl px-4 py-10 md:py-14">
-      <header>
+    <div className="mx-auto max-w-6xl px-4 py-10 md:py-14">
+      <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <article className="min-w-0">
+          <header>
         <Link
           href={`/berita/${artikel.kategori.slug}`}
           className="inline-block"
@@ -176,6 +179,13 @@ export default async function HalamanArtikel({
           </div>
         </section>
       )}
-    </article>
+        </article>
+        <div className="hidden lg:block">
+          <div className="sticky top-4">
+            <SlotIklanSidebar />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }

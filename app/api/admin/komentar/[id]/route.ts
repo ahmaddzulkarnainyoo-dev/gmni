@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/session";
 import type { Prisma } from "@prisma/client";
+import { catatAktivitas, evaluasiBadgeKader, tarikPoinEntitas } from "@/lib/gamifikasi";
 
 /**
  * PATCH /api/admin/komentar/[id] — aksi moderasi:
@@ -54,10 +55,21 @@ export async function PATCH(
     }),
   ]);
 
+  // Retraksi/pemberian ulang poin (disetujui penuh): SEMBUNYIKAN tarik
+  // poin; TAMPILKAN beri lagi bila penulisnya kader (best-effort).
+  if (aksi === "SEMBUNYIKAN") {
+    tarikPoinEntitas(id).catch(() => undefined);
+  } else if (aksi === "TAMPILKAN" && komentar.penulisId) {
+    const penulisId = komentar.penulisId;
+    catatAktivitas(penulisId, "KOMENTAR_TAMPIL", { detail: id })
+      .then(() => evaluasiBadgeKader(penulisId))
+      .catch(() => undefined);
+  }
+
   return NextResponse.json({ ok: true });
 }
 
-/** DELETE /api/admin/komentar/[id] — hapus permanen + turunkan jumlah komentar artikel. */
+/** DELETE /api/admin/komentar/[id] — hapus permanen + turunkan counter artikel. */
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -86,6 +98,9 @@ export async function DELETE(
       },
     }),
   ]);
+
+  // Retraksi poin hard-delete (disetujui penuh) — best-effort.
+  tarikPoinEntitas(id).catch(() => undefined);
 
   return NextResponse.json({ ok: true });
 }

@@ -142,7 +142,7 @@ export async function POST(request: Request) {
           visibilitasPenulis: visibilitas,
           namaTampilanKustom:
             visibilitas === "SAMARAN" ? teks(body.namaTampilanKustom) : null,
-          dikecualikanDariLeaderboard: visibilitas === "SAMARAN",
+          dikecualikanDariLeaderboard: visibilitas !== "ASLI",
           disematkan,
           tanggalDijadwalkan,
           ...(status === "TERBIT" ? { tanggalTerbit: new Date() } : {}),

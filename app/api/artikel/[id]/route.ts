@@ -134,7 +134,7 @@ export async function PATCH(
   data.visibilitasPenulis = visibilitas;
   data.namaTampilanKustom =
     visibilitas === "SAMARAN" ? String(body.namaTampilanKustom).trim() : null;
-  data.dikecualikanDariLeaderboard = visibilitas === "SAMARAN";
+  data.dikecualikanDariLeaderboard = visibilitas !== "ASLI";
 
   const bermintaSubmit = Boolean(body.ajukan);
   if (bermintaSubmit) {

@@ -34,7 +34,7 @@ export function SiteFooter() {
             rakyat kecil, setia pada Trisila.
           </p>
           <Link
-            href="/kontak-pengaduan"
+            href="/donasi"
             className="inline-block border border-gmnimerah-500 px-3 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-widest text-gmnimerah-400 transition-colors hover:bg-gmnimerah-500 hover:text-white"
           >
             Dukung Perjuangan Ini →
