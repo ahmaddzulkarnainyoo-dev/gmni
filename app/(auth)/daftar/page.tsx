@@ -17,15 +17,27 @@ export default async function HalamanDaftar({
 }) {
   const { token } = await searchParams;
 
-  // Mode invite legacy: token sah dari kader AKTIF → form undangan.
+  // Mode invite: token sah dari generator global ATAU invite legacy kader AKTIF.
   let pengundang: string | null = null;
   if (token) {
-    const pemilik = await prisma.user.findUnique({
-      where: { tokenUndangan: token },
-      select: { namaLengkap: true, statusAkun: true },
+    const undanganGlobal = await prisma.tokenUndangan.findUnique({
+      where: { token },
+      include: { dibuatOleh: { select: { namaLengkap: true, statusAkun: true } } },
     });
-    if (pemilik && pemilik.statusAkun === "AKTIF") {
-      pengundang = pemilik.namaLengkap;
+    if (
+      undanganGlobal &&
+      !undanganGlobal.dipakaiAt &&
+      undanganGlobal.dibuatOleh?.statusAkun === "AKTIF"
+    ) {
+      pengundang = undanganGlobal.dibuatOleh.namaLengkap;
+    } else {
+      const pemilik = await prisma.user.findUnique({
+        where: { tokenUndangan: token },
+        select: { namaLengkap: true, statusAkun: true },
+      });
+      if (pemilik && pemilik.statusAkun === "AKTIF") {
+        pengundang = pemilik.namaLengkap;
+      }
     }
   }
 

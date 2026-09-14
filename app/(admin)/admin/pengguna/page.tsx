@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { PanelPengguna } from "@/components/admin/PanelPengguna";
 import { PanelVerifikasiKader } from "@/components/admin/PanelVerifikasiKader";
+import { GeneratorUndangan } from "@/components/admin/GeneratorUndangan";
 
 export const metadata: Metadata = { title: "Pengguna & Undangan" };
 export const dynamic = "force-dynamic";
@@ -12,7 +13,7 @@ export default async function HalamanPenggunaAdmin() {
 
   const [daftar, menunggu] = await Promise.all([
     prisma.user.findMany({
-      orderBy: { tanggalBergabung: "desc" },
+      orderBy: [{ namaLengkap: "asc" }, { tanggalBergabung: "asc" }],
       select: {
         id: true,
         namaLengkap: true,
@@ -27,7 +28,7 @@ export default async function HalamanPenggunaAdmin() {
     }),
     prisma.user.findMany({
       where: { statusAkun: "PENDING" },
-      orderBy: { tanggalBergabung: "asc" },
+      orderBy: { namaLengkap: "asc" },
       select: {
         id: true,
         namaLengkap: true,
@@ -71,6 +72,7 @@ export default async function HalamanPenggunaAdmin() {
           sekali pakai, dan tangguhkan akun bila diperlukan.
         </p>
       </div>
+      {user.permissions.includes("pengguna.undang") && <GeneratorUndangan />}
       <section aria-label="Verifikasi pendaftaran kader" className="mt-8">
         <div className="flex flex-wrap items-center gap-2 border-b-2 border-hitam-900 pb-2">
           <h2 className="font-serif text-xl font-extrabold text-hitam-900">
@@ -90,8 +92,8 @@ export default async function HalamanPenggunaAdmin() {
         </h2>
         <PanelPengguna
           pengguna={data}
-          bisaUndang={user.permissions.includes("pengguna.undang")}
           bisaSuspend={user.permissions.includes("pengguna.suspend")}
+          bisaHapus={user.permissions.includes("pengguna.suspend")}
         />
       </section>
     </div>

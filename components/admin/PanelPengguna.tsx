@@ -14,37 +14,18 @@ type PenggunaData = {
   tanggalBergabung: string | null;
 };
 
-/** Kelola kader: buat undangan, salin tautan, tangguhkan/aktifkan. */
+/** Kelola kader: tangguhkan/aktifkan, hapus permanen. */
 export function PanelPengguna({
   pengguna,
-  bisaUndang,
   bisaSuspend,
+  bisaHapus,
 }: {
   pengguna: PenggunaData[];
-  bisaUndang: boolean;
   bisaSuspend: boolean;
+  bisaHapus: boolean;
 }) {
-  const [link, setLink] = useState<Record<string, string>>({});
   const [memuat, setMemuat] = useState<Record<string, string>>({});
   const [eror, setEror] = useState<Record<string, string>>({});
-
-  async function buatUndangan(id: string) {
-    setMemuat((m) => ({ ...m, [id]: "undang" }));
-    setEror((e) => ({ ...e, [id]: "" }));
-    try {
-      const res = await fetch(`/api/admin/pengguna/${id}/undangan`, { method: "POST" });
-      const data = (await res.json()) as { error?: string; linkUndangan?: string };
-      if (!res.ok || !data.linkUndangan) {
-        setEror((e) => ({ ...e, [id]: data.error ?? "Gagal membuat undangan." }));
-        return;
-      }
-      setLink((l) => ({ ...l, [id]: data.linkUndangan! }));
-    } catch {
-      setEror((e) => ({ ...e, [id]: "Tidak dapat menghubungi server." }));
-    } finally {
-      setMemuat((m) => ({ ...m, [id]: "" }));
-    }
-  }
 
   async function gantiStatus(u: PenggunaData) {
     setMemuat((m) => ({ ...m, [u.id]: "suspend" }));
@@ -58,6 +39,31 @@ export function PanelPengguna({
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setEror((e) => ({ ...e, [u.id]: data.error ?? "Gagal mengubah status." }));
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setEror((e) => ({ ...e, [u.id]: "Tidak dapat menghubungi server." }));
+    } finally {
+      setMemuat((m) => ({ ...m, [u.id]: "" }));
+    }
+  }
+
+  async function hapusAkun(u: PenggunaData) {
+    if (
+      !window.confirm(
+        `Hapus akun ${u.namaLengkap} (@${u.username}) secara permanen? Aksi ini tidak dapat dibatalkan.`,
+      )
+    ) {
+      return;
+    }
+    setMemuat((m) => ({ ...m, [u.id]: "hapus" }));
+    setEror((e) => ({ ...e, [u.id]: "" }));
+    try {
+      const res = await fetch(`/api/admin/pengguna/${u.id}`, { method: "DELETE" });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setEror((e) => ({ ...e, [u.id]: data.error ?? "Gagal menghapus akun." }));
         return;
       }
       window.location.reload();
@@ -118,31 +124,8 @@ export function PanelPengguna({
                   {eror[u.id]}
                 </p>
               )}
-              {link[u.id] && (
-                <div className="mt-3 border-2 border-gmnimerah-500 bg-gmnimerah-50 p-3">
-                  <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-gmnimerah-700">
-                    Tautan Undangan (sekali pakai)
-                  </p>
-                  <input
-                    readOnly
-                    value={link[u.id]}
-                    onFocus={(e) => e.target.select()}
-                    className="mt-1 w-full border border-hitam-300 bg-white px-2 py-1.5 font-mono text-[12px] text-hitam-900"
-                  />
-                </div>
-              )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
-              {bisaUndang && (
-                <button
-                  type="button"
-                  disabled={memuat[u.id] === "undang"}
-                  onClick={() => buatUndangan(u.id)}
-                  className="bg-hitam-900 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-gmnimerah-600 disabled:opacity-50"
-                >
-                  {memuat[u.id] === "undang" ? "Membuat..." : "Buat Undangan"}
-                </button>
-              )}
               {bisaSuspend && (
                 <button
                   type="button"
@@ -159,6 +142,16 @@ export function PanelPengguna({
                     : u.statusAkun === "AKTIF"
                       ? "Tangguhkan"
                       : "Aktifkan"}
+                </button>
+              )}
+              {bisaHapus && (
+                <button
+                  type="button"
+                  disabled={memuat[u.id] !== ""}
+                  onClick={() => hapusAkun(u)}
+                  className="border-2 border-hitam-900 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 transition-colors hover:bg-gmnimerah-700 hover:text-white disabled:opacity-50"
+                >
+                  {memuat[u.id] === "hapus" ? "Menghapus..." : "Hapus"}
                 </button>
               )}
             </div>

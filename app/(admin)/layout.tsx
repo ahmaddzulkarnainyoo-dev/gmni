@@ -2,7 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
-import { AdminNavMobile } from "@/components/admin/AdminNavMobile";
+import { AdminDrawer } from "@/components/admin/AdminDrawer";
 
 // Named export selain default/metadata dilarang Next 16 di layout — konstanta lokal.
 const MENU_ADMIN: Array<{
@@ -51,7 +51,8 @@ export default async function AdminLayout({
     <div className="flex min-h-screen flex-col">
       <header className="bg-hitam-900 text-white">
         <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4">
-          <LogoGMNI warne="putih" className="h-8 w-8" />
+          <AdminDrawer menu={MENU_ADMIN} />
+          <LogoGMNI warne="putih" className="hidden h-8 w-8 sm:block" />
           <p className="font-serif text-lg font-bold">
             info{" "}
             <span className="italic text-gmnimerah-400">Marhaen</span>
@@ -97,10 +98,7 @@ export default async function AdminLayout({
             ))}
           </nav>
         </aside>
-        <div className="min-w-0 flex-1">
-          <AdminNavMobile menu={MENU_ADMIN} />
-          {children}
-        </div>
+        <div className="min-w-0 flex-1">{children}</div>
       </div>
     </div>
   );

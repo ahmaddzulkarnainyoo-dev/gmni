@@ -14,6 +14,7 @@ export function DaftarForm({
   const [namaLengkap, setNamaLengkap] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
+  const [cabang, setCabang] = useState("");
   const [sandi, setSandi] = useState("");
   const [konfirmasi, setKonfirmasi] = useState("");
   const [memuat, setMemuat] = useState(false);
@@ -32,7 +33,7 @@ export function DaftarForm({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token, namaLengkap, username, email, password: sandi }),
+        body: JSON.stringify({ token, namaLengkap, username, email, password: sandi, cabangKomisariat: cabang }),
       });
       const data = (await res.json()) as { ok?: boolean; error?: string };
       if (!res.ok || !data.ok) {
@@ -133,6 +134,22 @@ export function DaftarForm({
           onChange={(e) => setEmail(e.target.value)}
           className="w-full border-2 border-hitam-900 bg-white px-3 py-2 font-sans text-sm text-hitam-900 outline-none transition-colors focus:border-gmnimerah-500"
           placeholder="kader@contoh.id"
+        />
+      </label>
+
+      <label className="block">
+        <span className="mb-1 block font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-600">
+          Cabang / Komisariat
+        </span>
+        <input
+          type="text"
+          required
+          minLength={3}
+          maxLength={120}
+          value={cabang}
+          onChange={(e) => setCabang(e.target.value)}
+          className="w-full border-2 border-hitam-900 bg-white px-3 py-2 font-sans text-sm text-hitam-900 outline-none transition-colors focus:border-gmnimerah-500"
+          placeholder="mis. Cabang Jakarta Selatan"
         />
       </label>
 

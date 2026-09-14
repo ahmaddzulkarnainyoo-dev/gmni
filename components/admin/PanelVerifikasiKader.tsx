@@ -55,6 +55,31 @@ export function PanelVerifikasiKader({
     }
   }
 
+  async function hapus(id: string, nama: string) {
+    if (
+      !window.confirm(
+        `Hapus pendaftaran ${nama} secara permanen? Akun dihapus dari database (Tolak hanya menangguhkan).`,
+      )
+    ) {
+      return;
+    }
+    setMemuat((m) => ({ ...m, [id]: "HAPUS" }));
+    setEror((e) => ({ ...e, [id]: "" }));
+    try {
+      const res = await fetch(`/api/admin/pengguna/${id}`, { method: "DELETE" });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setEror((e) => ({ ...e, [id]: data.error ?? "Gagal menghapus pendaftaran." }));
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setEror((e) => ({ ...e, [id]: "Tidak dapat menghubungi server." }));
+    } finally {
+      setMemuat((m) => ({ ...m, [id]: "" }));
+    }
+  }
+
   if (pendaftar.length === 0) {
     return (
       <div className="mt-6 border-4 border-dashed border-hitam-200 bg-kertas-100 p-10 text-center">
@@ -114,6 +139,14 @@ export function PanelVerifikasiKader({
                 className="min-h-11 border-2 border-hitam-900 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 transition-colors hover:bg-hitam-900 hover:text-white disabled:opacity-50"
               >
                 {memuat[u.id] === "SUSPEND" ? "Menolak..." : "Tolak"}
+              </button>
+              <button
+                type="button"
+                disabled={memuat[u.id] !== ""}
+                onClick={() => hapus(u.id, u.namaLengkap)}
+                className="min-h-11 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-gmnimerah-700 transition-colors hover:bg-gmnimerah-700 hover:text-white disabled:opacity-50"
+              >
+                {memuat[u.id] === "HAPUS" ? "Menghapus..." : "Hapus"}
               </button>
             </div>
           </div>

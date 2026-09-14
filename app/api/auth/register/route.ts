@@ -117,11 +117,37 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: erorUnik }, { status: 409 });
     }
 
-    const pengundang = token
-      ? await prisma.user.findUnique({ where: { tokenUndangan: token } })
-      : null;
-    // Mode invite: hanya kader AKTIF yang boleh mengundang.
-    if (token && (!pengundang || pengundang.statusAkun !== "AKTIF")) {
+    // Lookup token undangan: prima TokenUndangan global (generator admin),
+    // fallback token legacy yang menempel pada kader (backward compat Q2).
+    let pengundang: { id: string; email: string } | null = null;
+    let undanganGlobalId: string | null = null;
+    if (token) {
+      const undanganGlobal = await prisma.tokenUndangan.findUnique({
+        where: { token },
+        include: { dibuatOleh: { select: { id: true, email: true, statusAkun: true } } },
+      });
+      if (
+        undanganGlobal &&
+        !undanganGlobal.dipakaiAt &&
+        undanganGlobal.dibuatOleh?.statusAkun === "AKTIF"
+      ) {
+        undanganGlobalId = undanganGlobal.id;
+        pengundang = {
+          id: undanganGlobal.dibuatOleh.id,
+          email: undanganGlobal.dibuatOleh.email,
+        };
+      } else {
+        const legacy = await prisma.user.findUnique({
+          where: { tokenUndangan: token },
+          select: { id: true, email: true, statusAkun: true },
+        });
+        if (legacy && legacy.statusAkun === "AKTIF") {
+          pengundang = { id: legacy.id, email: legacy.email };
+        }
+      }
+    }
+    // Mode invite: token harus sah dari kader AKTIF / generator admin.
+    if (token && !pengundang) {
       return NextResponse.json(
         { error: "Token undangan tidak valid atau sudah dipakai." },
         { status: 400 },
@@ -138,14 +164,10 @@ export async function POST(request: Request) {
 
     const passwordHash = await hash(password, 12);
 
-    // Mode invite legacy: kader baru langsung AKTIF + token pengundang
-    // dikosongkan (sekali pakai).
+    // Mode invite: kader baru langsung AKTIF. Token global ditandai dipakai;
+    // token legacy kader dikosongkan (sekali pakai).
     if (pengundang) {
-      const [, kaderUndang] = await prisma.$transaction([
-        prisma.user.update({
-          where: { id: pengundang.id },
-          data: { tokenUndangan: null },
-        }),
+      const [kaderUndang] = await prisma.$transaction([
         prisma.user.create({
           data: {
             namaLengkap,
@@ -157,6 +179,15 @@ export async function POST(request: Request) {
             diundangOlehId: pengundang.id,
           },
         }),
+        undanganGlobalId
+          ? prisma.tokenUndangan.update({
+              where: { id: undanganGlobalId },
+              data: { dipakaiAt: new Date() },
+            })
+          : prisma.user.update({
+              where: { id: pengundang.id },
+              data: { tokenUndangan: null },
+            }),
       ]);
 
       console.log(

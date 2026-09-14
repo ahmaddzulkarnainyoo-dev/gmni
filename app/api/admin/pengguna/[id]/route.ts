@@ -68,3 +68,52 @@ export async function PATCH(
 
   return NextResponse.json({ ok: true, email: target.email, statusAkun: diperbarui[0].statusAkun });
 }
+
+/**
+ * Hapus akun permanen (pengguna.suspend). Guard integritas: akun yang masih
+ * memiliki artikel TIDAK boleh dihapus (FK Artikel.penulisId Restrict —
+ * rekam jejak redaksi dilindungi); gunakan Suspend untuk non-aktifasi.
+ */
+export async function DELETE(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { id } = await params;
+  const user = await requirePermission("pengguna.suspend");
+
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) {
+    return NextResponse.json({ error: "Kader tidak ditemukan." }, { status: 404 });
+  }
+  if (target.id === user.id) {
+    return NextResponse.json(
+      { error: "Tidak dapat menghapus akun sendiri." },
+      { status: 400 },
+    );
+  }
+
+  const jumlahArtikel = await prisma.artikel.count({ where: { penulisId: id } });
+  if (jumlahArtikel > 0) {
+    return NextResponse.json(
+      {
+        error: `Akun tidak dapat dihapus karena masih memiliki ${jumlahArtikel} artikel (rekam jejak redaksi). Gunakan fitur Tangguhkan untuk menonaktifkan akun ini.`,
+      },
+      { status: 409 },
+    );
+  }
+
+  await prisma.$transaction([
+    prisma.user.delete({ where: { id } }),
+    prisma.auditLog.create({
+      data: {
+        aktorId: user.id,
+        aksi: "user.hapus_permanen",
+        entitasTipe: "User",
+        entitasId: target.id,
+        dataSebelum: { email: target.email, username: target.username, statusAkun: target.statusAkun },
+      },
+    }),
+  ]);
+
+  return NextResponse.json({ ok: true, email: target.email });
+}

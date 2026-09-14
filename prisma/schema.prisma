@@ -146,6 +146,7 @@ model User {
   peringkat         PeringkatMingguan[] @relation("PeringkatMingguan")
   iklanDibuat       Iklan[] @relation("IklanDibuatOleh")
   donasiDiverifikasi Donasi[] @relation("DonasiDiverifikasiOleh")
+  undanganDibuat    TokenUndangan[] @relation("UndanganDibuatOleh")
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -516,4 +517,18 @@ model AuditLog {
   @@index([entitasTipe, entitasId])
   @@index([aktorId])
   @@index([tanggal])
+}
+
+/// Tautan undangan global (generator admin, sekali pakai) — tidak terikat
+/// ke kartu kader tertentu; dibuat lewat panel atas /admin/pengguna.
+model TokenUndangan {
+  id           String    @id @default(cuid())
+  token        String    @unique
+  dibuatOlehId String?
+  dibuatOleh   User?     @relation("UndanganDibuatOleh", fields: [dibuatOlehId], references: [id], onDelete: SetNull)
+  dipakaiAt    DateTime? /// sekali pakai — di-set saat /api/auth/register consume
+  createdAt    DateTime  @default(now())
+
+  @@index([dipakaiAt])
+  @@index([dibuatOlehId])
 }
