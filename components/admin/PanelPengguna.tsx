@@ -8,24 +8,62 @@ type PenggunaData = {
   email: string;
   username: string;
   statusAkun: "AKTIF" | "PENDING" | "SUSPEND";
+  roleId: string;
   roleNama: string;
   tokenUndangan: string | null;
   diundangOlehEmail: string | null;
   tanggalBergabung: string | null;
 };
 
-/** Kelola kader: tangguhkan/aktifkan, hapus permanen. */
+type RoleOpsi = { id: string; nama: string };
+
+/** Kelola kader: ubah peran, tangguhkan/aktifkan, hapus permanen. */
 export function PanelPengguna({
   pengguna,
+  roles,
   bisaSuspend,
   bisaHapus,
+  bisaUbahRole,
 }: {
   pengguna: PenggunaData[];
+  roles: RoleOpsi[];
   bisaSuspend: boolean;
   bisaHapus: boolean;
+  bisaUbahRole: boolean;
 }) {
   const [memuat, setMemuat] = useState<Record<string, string>>({});
   const [eror, setEror] = useState<Record<string, string>>({});
+
+  async function gantiPeran(u: PenggunaData, roleId: string) {
+    const roleBaru = roles.find((r) => r.id === roleId);
+    if (!roleBaru || roleBaru.id === u.roleId) return;
+    if (
+      !window.confirm(
+        `Ubah peran ${u.namaLengkap} dari ${u.roleNama} menjadi ${roleBaru.nama}? Berlaku saat kader login berikutnya.`,
+      )
+    ) {
+      return;
+    }
+    setMemuat((m) => ({ ...m, [u.id]: "peran" }));
+    setEror((e) => ({ ...e, [u.id]: "" }));
+    try {
+      const res = await fetch(`/api/admin/pengguna/${u.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ roleId }),
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setEror((e) => ({ ...e, [u.id]: data.error ?? "Gagal mengubah peran." }));
+        return;
+      }
+      window.location.reload();
+    } catch {
+      setEror((e) => ({ ...e, [u.id]: "Tidak dapat menghubungi server." }));
+    } finally {
+      setMemuat((m) => ({ ...m, [u.id]: "" }));
+    }
+  }
 
   async function gantiStatus(u: PenggunaData) {
     setMemuat((m) => ({ ...m, [u.id]: "suspend" }));
@@ -107,6 +145,26 @@ export function PanelPengguna({
                 <span className="font-mono text-[11px] uppercase tracking-wider text-hitam-400">
                   {u.roleNama}
                 </span>
+                {bisaUbahRole && u.roleNama !== "Super Admin" && (
+                  <label className="mt-1 block">
+                    <span className="sr-only">Ubah peran {u.namaLengkap}</span>
+                    <select
+                      value={u.roleId}
+                      disabled={memuat[u.id] !== ""}
+                      onChange={(e) => gantiPeran(u, e.target.value)}
+                      className="mt-1 max-w-[220px] border border-hitam-900 bg-white px-2 py-1.5 font-mono text-[11px] font-bold uppercase tracking-wider text-hitam-900 disabled:opacity-50"
+                    >
+                      {roles.every((r) => r.id !== u.roleId) && (
+                        <option value={u.roleId}>{u.roleNama} (saat ini)</option>
+                      )}
+                      {roles.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.nama}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
               </div>
               <p className="mt-2 font-serif text-lg font-bold text-hitam-900">
                 {u.namaLengkap}

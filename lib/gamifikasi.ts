@@ -167,12 +167,18 @@ export type BarisPeringkat = {
   totalPoin: number;
   jumlahArtikel: number;
   jumlahKomentar: number;
+  /** True bila akun kader menyembunyikan profil (hanya diisi mode admin). */
+  profilTersembunyi?: boolean;
 };
 
 /** Agregasi leaderboard minggu berjalan dari ledger KegiatanKader. */
-export async function ambilPeringkatMingguan(batas = 50): Promise<BarisPeringkat[]> {
+export async function ambilPeringkatMingguan(
+  batas = 50,
+  opsi?: { sertakanTersembunyi?: boolean },
+): Promise<BarisPeringkat[]> {
   const awal = awalMingguBerjalan();
   const akhir = akhirMingguBerjalan();
+  const sertakanTersembunyi = opsi?.sertakanTersembunyi === true;
   const ledger = await prisma.kegiatanKader.groupBy({
     by: ["userId"],
     where: { tanggal: { gte: awal, lt: akhir } },
@@ -184,8 +190,20 @@ export async function ambilPeringkatMingguan(batas = 50): Promise<BarisPeringkat
   const userIds = ledger.map((l) => l.userId);
   const [pengguna, artikel, komentar] = await Promise.all([
     prisma.user.findMany({
-      where: { id: { in: userIds }, statusAkun: "AKTIF", profilTersembunyi: false },
-      select: { id: true, namaLengkap: true, username: true, fotoProfil: true, daerahAsal: true },
+      where: {
+        id: { in: userIds },
+        statusAkun: "AKTIF",
+        // Panel admin boleh menyertakan kader berperil tersembunyi.
+        ...(sertakanTersembunyi ? {} : { profilTersembunyi: false }),
+      },
+      select: {
+        id: true,
+        namaLengkap: true,
+        username: true,
+        fotoProfil: true,
+        daerahAsal: true,
+        profilTersembunyi: true,
+      },
     }),
     prisma.artikel.groupBy({
       by: ["penulisId"],
@@ -222,6 +240,7 @@ export async function ambilPeringkatMingguan(batas = 50): Promise<BarisPeringkat
       totalPoin: l._sum.poin ?? 0,
       jumlahArtikel: petaArtikel.get(u.id) ?? 0,
       jumlahKomentar: petaKomentar.get(u.id) ?? 0,
+      profilTersembunyi: (u as { profilTersembunyi?: boolean }).profilTersembunyi ?? false,
     });
     if (baris.length >= batas) break;
   }

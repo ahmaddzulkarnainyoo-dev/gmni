@@ -11,7 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function HalamanPenggunaAdmin() {
   const user = await requirePermission("pengguna.undang", "pengguna.suspend");
 
-  const [daftar, menunggu] = await Promise.all([
+  const [daftar, menunggu, roles] = await Promise.all([
     prisma.user.findMany({
       orderBy: [{ namaLengkap: "asc" }, { tanggalBergabung: "asc" }],
       select: {
@@ -22,7 +22,7 @@ export default async function HalamanPenggunaAdmin() {
         statusAkun: true,
         tokenUndangan: true,
         tanggalBergabung: true,
-        role: { select: { nama: true } },
+        role: { select: { id: true, nama: true } },
         diundangOleh: { select: { email: true } },
       },
     }),
@@ -38,6 +38,12 @@ export default async function HalamanPenggunaAdmin() {
         tanggalBergabung: true,
       },
     }),
+    // Daftar peran untuk dropdown ubah peran (Super Admin dilindungi).
+    prisma.role.findMany({
+      where: { nama: { not: "Super Admin" } },
+      orderBy: { nama: "asc" },
+      select: { id: true, nama: true },
+    }),
   ]);
 
   const data = daftar.map((u) => ({
@@ -46,6 +52,7 @@ export default async function HalamanPenggunaAdmin() {
     email: u.email,
     username: u.username,
     statusAkun: u.statusAkun,
+    roleId: u.role.id,
     roleNama: u.role.nama,
     tokenUndangan: u.tokenUndangan,
     diundangOlehEmail: u.diundangOleh?.email ?? null,
@@ -92,8 +99,10 @@ export default async function HalamanPenggunaAdmin() {
         </h2>
         <PanelPengguna
           pengguna={data}
+          roles={roles}
           bisaSuspend={user.permissions.includes("pengguna.suspend")}
           bisaHapus={user.permissions.includes("pengguna.suspend")}
+          bisaUbahRole={user.permissions.includes("role.kelola")}
         />
       </section>
     </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { amanAsync } from "@/lib/kueri-aman";
 import { TabelLaporan } from "@/components/admin/TabelLaporan";
 
 export const metadata: Metadata = { title: "Laporan Penyalahgunaan" };
@@ -16,22 +17,27 @@ export default async function HalamanLaporanAdmin() {
 
   const syarat = { jumlahLaporan: { gt: 0 } };
 
-  const [totalKomentar, agregat, komentar] = await Promise.all([
-    prisma.komentar.count({ where: syarat }),
-    prisma.komentar.aggregate({
-      where: syarat,
-      _sum: { jumlahLaporan: true },
-    }),
-    prisma.komentar.findMany({
-      where: syarat,
-      orderBy: [{ jumlahLaporan: "desc" }, { tanggal: "desc" }],
-      take: 100,
-      include: {
-        artikel: { select: { judul: true, slug: true } },
-        penulis: { select: { id: true, namaLengkap: true, username: true } },
-      },
-    }),
-  ]);
+  const [totalKomentar, agregat, komentar, gagalMemuat] = await amanAsync(
+    () =>
+      Promise.all([
+        prisma.komentar.count({ where: syarat }),
+        prisma.komentar.aggregate({
+          where: syarat,
+          _sum: { jumlahLaporan: true },
+        }),
+        prisma.komentar.findMany({
+          where: syarat,
+          orderBy: [{ jumlahLaporan: "desc" }, { tanggal: "desc" }],
+          take: 100,
+          include: {
+            artikel: { select: { judul: true, slug: true } },
+            penulis: { select: { id: true, namaLengkap: true, username: true } },
+          },
+        }),
+        Promise.resolve(false),
+      ]),
+    [0, { _sum: { jumlahLaporan: null } }, [], true],
+  );
 
   const totalLaporan = agregat._sum.jumlahLaporan ?? 0;
 
@@ -46,6 +52,16 @@ export default async function HalamanLaporanAdmin() {
           laporan, atau hapus permanen.
         </p>
       </div>
+
+      {gagalMemuat && (
+        <p
+          role="alert"
+          className="mt-4 border-2 border-gmnimerah-500 bg-gmnimerah-50 px-4 py-2.5 text-sm font-semibold text-gmnimerah-700"
+        >
+          Data tidak dapat dimuat sementara — periksa koneksi database lalu
+          muat ulang halaman.
+        </p>
+      )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <div className="border-2 border-hitam-900 bg-white p-4">

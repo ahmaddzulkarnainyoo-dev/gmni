@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { amanAsync } from "@/lib/kueri-aman";
 import { TabelArtikelAdmin } from "@/components/admin/TabelArtikelAdmin";
 import type { Prisma, StatusArtikel } from "@prisma/client";
 
@@ -9,6 +10,18 @@ export const metadata: Metadata = { title: "Kelola Artikel" };
 export const dynamic = "force-dynamic";
 
 const PER_HALAMAN = 10;
+
+/** Whitelist status alur editorial — nilai tak dikenal diabaikan (anti-crash). */
+const STATUS_SAH: ReadonlySet<string> = new Set<string>([
+  "DRAFT",
+  "DIAJUKAN",
+  "SEDANG_DITINJAU",
+  "DIMINTA_REVISI",
+  "DISETUJUI",
+  "TERBIT",
+  "DITOLAK",
+  "DIARSIPKAN",
+]);
 
 export default async function HalamanArtikelAdmin({
   searchParams,
@@ -20,40 +33,47 @@ export default async function HalamanArtikelAdmin({
   const { q, kategori, status, halaman } = await searchParams;
   const kataKunci = q?.trim() ?? "";
   const kategoriId = kategori ?? "";
-  const statusFilter = status ?? "";
+  // Validasi enum sebelum dikirim ke Prisma — cegah PrismaClientValidationError.
+  const mentahStatus = status ?? "";
+  const statusFilter = STATUS_SAH.has(mentahStatus) ? (mentahStatus as StatusArtikel) : "";
   const nomorHalaman = Math.max(1, parseInt(halaman ?? "1", 10) || 1);
 
   const where: Prisma.ArtikelWhereInput = {
     AND: [
       kataKunci ? { judul: { contains: kataKunci, mode: "insensitive" } } : {},
       kategoriId ? { kategoriId } : {},
-      statusFilter ? { status: statusFilter as StatusArtikel } : {},
+      statusFilter ? { status: statusFilter } : {},
     ],
   };
 
-  const [total, artikel, kategoriList] = await Promise.all([
-    prisma.artikel.count({ where }),
-    prisma.artikel.findMany({
-      where,
-      orderBy: [{ disematkan: "desc" }, { updatedAt: "desc" }],
-      skip: (nomorHalaman - 1) * PER_HALAMAN,
-      take: PER_HALAMAN,
-      select: {
-        id: true,
-        judul: true,
-        slug: true,
-        status: true,
-        disematkan: true,
-        gambarUtama: true,
-        tanggalTerbit: true,
-        visibilitasPenulis: true,
-        namaTampilanKustom: true,
-        kategori: { select: { nama: true } },
-        penulis: { select: { namaLengkap: true } },
-      },
-    }),
-    prisma.kategori.findMany({ orderBy: [{ isTetap: "desc" }, { nama: "asc" }] }),
-  ]);
+  const [total, artikel, kategoriList, gagalMemuat] = await amanAsync(
+    () =>
+      Promise.all([
+        prisma.artikel.count({ where }),
+        prisma.artikel.findMany({
+          where,
+          orderBy: [{ disematkan: "desc" }, { updatedAt: "desc" }],
+          skip: (nomorHalaman - 1) * PER_HALAMAN,
+          take: PER_HALAMAN,
+          select: {
+            id: true,
+            judul: true,
+            slug: true,
+            status: true,
+            disematkan: true,
+            gambarUtama: true,
+            tanggalTerbit: true,
+            visibilitasPenulis: true,
+            namaTampilanKustom: true,
+            kategori: { select: { nama: true } },
+            penulis: { select: { namaLengkap: true } },
+          },
+        }),
+        prisma.kategori.findMany({ orderBy: [{ isTetap: "desc" }, { nama: "asc" }] }),
+        Promise.resolve(false),
+      ]),
+    [0, [], [], true],
+  );
 
   const jumlahHalaman = Math.max(1, Math.ceil(total / PER_HALAMAN));
 
@@ -89,6 +109,16 @@ export default async function HalamanArtikelAdmin({
           + Tulis Artikel
         </Link>
       </div>
+
+      {gagalMemuat && (
+        <p
+          role="alert"
+          className="mt-4 border-2 border-gmnimerah-500 bg-gmnimerah-50 px-4 py-2.5 text-sm font-semibold text-gmnimerah-700"
+        >
+          Data tidak dapat dimuat sementara — periksa koneksi database lalu
+          muat ulang halaman.
+        </p>
+      )}
 
       <TabelArtikelAdmin
         artikel={data}

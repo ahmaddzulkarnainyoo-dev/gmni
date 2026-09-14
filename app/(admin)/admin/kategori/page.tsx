@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { requireRole } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
+import { amanAsync } from "@/lib/kueri-aman";
 import { PanelKategori } from "@/components/admin/PanelKategori";
 
 export const metadata: Metadata = { title: "Kategori" };
@@ -11,13 +12,18 @@ export default async function HalamanKategoriAdmin() {
   // redaksi memastikan hanya orang yang boleh mengelola artikel yang lewat.
   await requireRole("Super Admin", "Editor");
 
-  const [kategori, totalArtikel] = await Promise.all([
-    prisma.kategori.findMany({
-      orderBy: [{ isTetap: "desc" }, { nama: "asc" }],
-      select: { id: true, nama: true, slug: true, deskripsi: true, isTetap: true },
-    }),
-    prisma.artikel.groupBy({ by: ["kategoriId"], _count: { _all: true } }),
-  ]);
+  const [kategori, totalArtikel, gagalMemuat] = await amanAsync(
+    () =>
+      Promise.all([
+        prisma.kategori.findMany({
+          orderBy: [{ isTetap: "desc" }, { nama: "asc" }],
+          select: { id: true, nama: true, slug: true, deskripsi: true, isTetap: true },
+        }),
+        prisma.artikel.groupBy({ by: ["kategoriId"], _count: { _all: true } }),
+        Promise.resolve(false),
+      ]),
+    [[], [], true],
+  );
 
   const hitung = new Map<string, number>();
   for (const baris of totalArtikel) hitung.set(baris.kategoriId, baris._count._all);
@@ -33,6 +39,15 @@ export default async function HalamanKategoriAdmin() {
           dihapus (blueprint 7.4).
         </p>
       </div>
+      {gagalMemuat && (
+        <p
+          role="alert"
+          className="mt-4 border-2 border-gmnimerah-500 bg-gmnimerah-50 px-4 py-2.5 text-sm font-semibold text-gmnimerah-700"
+        >
+          Data tidak dapat dimuat sementara — periksa koneksi database lalu
+          muat ulang halaman.
+        </p>
+      )}
       <PanelKategori
         kategori={kategori.map((k) => ({
           id: k.id,
