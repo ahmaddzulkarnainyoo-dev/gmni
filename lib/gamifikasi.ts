@@ -83,7 +83,7 @@ export async function tarikPoinEntitas(detail: string): Promise<void> {
     // Best-effort.
   }
 }
-/** Beri badge idempoten (upsert — duplikat diabaikan). */
+/** Beri badge idempoten (upsert â€” duplikat diabaikan). */
 export async function beriBadge(
   userId: string,
   jenisBadge: string,
@@ -136,7 +136,7 @@ export async function perbaruiStreak(userId: string, sekarang = new Date()): Pro
   }
 }
 
-/** Evaluasi badge lifetime (artikel & komentar) — dipanggil lazily. */
+/** Evaluasi badge lifetime (artikel & komentar) â€” dipanggil lazily. */
 export async function evaluasiBadgeKader(userId: string): Promise<void> {
   try {
     const [jumlahArtikel, jumlahKomentar] = await Promise.all([
