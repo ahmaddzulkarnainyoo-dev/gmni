@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { PanelPengguna } from "@/components/admin/PanelPengguna";
+import { PanelVerifikasiKader } from "@/components/admin/PanelVerifikasiKader";
 
 export const metadata: Metadata = { title: "Pengguna & Undangan" };
 export const dynamic = "force-dynamic";
@@ -9,20 +10,34 @@ export const dynamic = "force-dynamic";
 export default async function HalamanPenggunaAdmin() {
   const user = await requirePermission("pengguna.undang", "pengguna.suspend");
 
-  const daftar = await prisma.user.findMany({
-    orderBy: { tanggalBergabung: "desc" },
-    select: {
-      id: true,
-      namaLengkap: true,
-      email: true,
-      username: true,
-      statusAkun: true,
-      tokenUndangan: true,
-      tanggalBergabung: true,
-      role: { select: { nama: true } },
-      diundangOleh: { select: { email: true } },
-    },
-  });
+  const [daftar, menunggu] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { tanggalBergabung: "desc" },
+      select: {
+        id: true,
+        namaLengkap: true,
+        email: true,
+        username: true,
+        statusAkun: true,
+        tokenUndangan: true,
+        tanggalBergabung: true,
+        role: { select: { nama: true } },
+        diundangOleh: { select: { email: true } },
+      },
+    }),
+    prisma.user.findMany({
+      where: { statusAkun: "PENDING" },
+      orderBy: { tanggalBergabung: "asc" },
+      select: {
+        id: true,
+        namaLengkap: true,
+        email: true,
+        username: true,
+        cabangKomisariat: true,
+        tanggalBergabung: true,
+      },
+    }),
+  ]);
 
   const data = daftar.map((u) => ({
     id: u.id,
@@ -36,6 +51,15 @@ export default async function HalamanPenggunaAdmin() {
     tanggalBergabung: u.tanggalBergabung.toISOString(),
   }));
 
+  const dataMenunggu = menunggu.map((u) => ({
+    id: u.id,
+    namaLengkap: u.namaLengkap,
+    email: u.email,
+    username: u.username,
+    cabangKomisariat: u.cabangKomisariat,
+    tanggalBergabung: u.tanggalBergabung.toISOString(),
+  }));
+
   return (
     <div className="mx-auto max-w-4xl">
       <div className="border-b-2 border-hitam-900 pb-3">
@@ -43,15 +67,33 @@ export default async function HalamanPenggunaAdmin() {
           Pengguna & Undangan
         </h1>
         <p className="mt-1 text-sm text-hitam-500">
-          Kelola akun kader, buat tautan undangan sekali pakai, dan tangguhkan
-          akun bila diperlukan.
+          Kelola akun kader, verifikasi pendaftaran baru, buat tautan undangan
+          sekali pakai, dan tangguhkan akun bila diperlukan.
         </p>
       </div>
-      <PanelPengguna
-        pengguna={data}
-        bisaUndang={user.permissions.includes("pengguna.undang")}
-        bisaSuspend={user.permissions.includes("pengguna.suspend")}
-      />
+      <section aria-label="Verifikasi pendaftaran kader" className="mt-8">
+        <div className="flex flex-wrap items-center gap-2 border-b-2 border-hitam-900 pb-2">
+          <h2 className="font-serif text-xl font-extrabold text-hitam-900">
+            Verifikasi Pendaftaran Kader
+          </h2>
+          {dataMenunggu.length > 0 && (
+            <span className="bg-gmnimerah-500 px-2 py-0.5 font-mono text-[11px] font-bold uppercase tracking-widest text-white">
+              {dataMenunggu.length} menunggu
+            </span>
+          )}
+        </div>
+        <PanelVerifikasiKader pendaftar={dataMenunggu} />
+      </section>
+      <section aria-label="Kader dan undangan" className="mt-10">
+        <h2 className="border-b-2 border-hitam-900 pb-2 font-serif text-xl font-extrabold text-hitam-900">
+          Kader & Undangan
+        </h2>
+        <PanelPengguna
+          pengguna={data}
+          bisaUndang={user.permissions.includes("pengguna.undang")}
+          bisaSuspend={user.permissions.includes("pengguna.suspend")}
+        />
+      </section>
     </div>
   );
 }

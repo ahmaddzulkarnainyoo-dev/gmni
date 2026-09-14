@@ -22,3 +22,16 @@ function normalisasiJalur(jalur: string): string {
   const bersih = jalur.replace(/\/+$/, "");
   return bersih === "" ? "/" : bersih;
 }
+
+/**
+ * Role yang berhak masuk area /admin (blueprint 5.2).
+ * Single source of truth — dipakai proxy.ts (edge), session gate server,
+ * redirect login client, dan visibilitas tombol Admin di header.
+ */
+export const ROLES_ADMIN = ["Super Admin", "Editor"] as const;
+
+export type NamaRoleAdmin = (typeof ROLES_ADMIN)[number];
+
+export function bolehMasukAdmin(roleNama?: string | null): boolean {
+  return roleNama === "Super Admin" || roleNama === "Editor";
+}

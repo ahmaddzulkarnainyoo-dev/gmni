@@ -12,6 +12,7 @@ import { MobileNav } from "@/components/publik/MobileNav";
 import { NavDesktop } from "@/components/publik/NavDesktop";
 import { TickerBerita } from "@/components/publik/TickerBerita";
 import { SlotIklanHeader } from "@/components/publik/SlotIklanHeader";
+import { bolehMasukAdmin } from "@/lib/nav";
 import { prisma } from "@/lib/prisma";
 
 function TanggalHariIni() {
@@ -62,7 +63,7 @@ export async function SiteHeader() {
                 >
                   Dasbor
                 </Link>
-                {user.roleNama && (
+                {bolehMasukAdmin(user.roleNama) && (
                   <Link
                     href="/admin"
                     className="inline-flex min-h-7 items-center rounded-sm border border-white/30 px-2.5 py-1 text-[10px] text-kertas-200 transition-colors hover:border-white hover:text-white"

@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { jalurAktif } from "@/lib/nav";
+import { bolehMasukAdmin, jalurAktif } from "@/lib/nav";
 
 type NavItem = { label: string; href: string };
 type KatItem = { label: string; slug: string };
@@ -115,7 +115,7 @@ export function MobileNav({
                   <Link href="/dasbor" onClick={() => setBuka(false)} className="rounded-sm border border-hitam-900 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-hitam-900 transition-colors hover:bg-hitam-900 hover:text-white">
                     Dasbor
                   </Link>
-                  {user.roleNama && (
+                  {bolehMasukAdmin(user.roleNama) && (
                     <Link href="/admin" onClick={() => setBuka(false)} className="rounded-sm border border-red-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-red-600 transition-colors hover:bg-red-600 hover:text-white">
                       Admin
                     </Link>

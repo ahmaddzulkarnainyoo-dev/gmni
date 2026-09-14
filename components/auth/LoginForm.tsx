@@ -2,10 +2,15 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { signIn } from "next-auth/react";
+import { getSession, signIn } from "next-auth/react";
 import Link from "next/link";
+import { bolehMasukAdmin } from "@/lib/nav";
 
-/** Formulir masuk (Credentials + langkah 2FA) — dikirim ke endpoint NextAuth. */
+/**
+ * Formulir masuk (Credentials + langkah 2FA) — dikirim ke endpoint NextAuth.
+ * Setelah sukses: Admin/Editor langsung diarahkan ke /admin, kader ke
+ * callbackUrl yang aman atau /dasbor.
+ */
 export function LoginForm() {
   const router = useRouter();
   const params = useSearchParams();
@@ -55,8 +60,20 @@ export function LoginForm() {
       setMemuat(false);
       return;
     }
-    router.push(tujuan);
+    router.push(await tujuanAdmin(tujuan));
     router.refresh();
+  }
+
+  /** Tujuan pasca-login: Admin/Editor → /admin, kader → callbackUrl aman. */
+  async function tujuanAdmin(fallback: string): Promise<string> {
+    try {
+      const sesi = await getSession();
+      const roleNama = sesi?.user?.roleNama ?? null;
+      if (bolehMasukAdmin(roleNama)) return "/admin";
+    } catch {
+      // Gagal baca sesi (offline sesaat) — pakai fallback aman.
+    }
+    return fallback;
   }
 
   return (

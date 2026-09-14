@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
+import { bolehMasukAdmin } from "@/lib/nav";
 
 /**
  * Proxy (pengganti middleware.ts di Next.js 16 — lihat note di node_modules/next/dist/docs).
  * Proteksi rute berlapis di edge: /admin/* & /dasbor/*.
  * Lapisan server-side tetap ada di app/(admin)/layout.tsx & app/(dasbor)/layout.tsx.
  */
-const ROLES_ADMIN = ["Super Admin", "Editor"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url);
     }
     const roleNama = token.roleNama as string | undefined;
-    if (!roleNama || !ROLES_ADMIN.includes(roleNama)) {
+    if (!bolehMasukAdmin(roleNama)) {
       return NextResponse.redirect(new URL("/", request.url));
     }
   }

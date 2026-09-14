@@ -414,16 +414,30 @@ async function seedTokoh() {
   console.log(`✓ Tokoh: ${TOKOH.length} profil Marhaenis ter-upsert.`);
 }
 
-/** Super Admin pertama — dari env (blueprint 13.3: keputusan open). */
+/** Super Admin pertama — dari env (blueprint 13.3: keputusan open).
+ *
+ * BOOTSTRAP PRODUKSI (self-healing, idempoten):
+ * - Email default "admin@marhaen.com" bila SEED_ADMIN_EMAIL kosong — email
+ *   ini adalah pintu masuk admin yang selalu diuji sehingga tidak boleh
+ *   "tidak ditemukan" di produksi.
+ * - SEED_ADMIN_PASSWORD wajib diisi — bila kosong, seed di-skip dengan
+ *   peringatan (warn-and-skip; tanpa sandi default insecure) agar admin
+ *   eksplisit menyetelnya di environment produksi.
+ * - Setelah upsert, dicek "punya >= 1 Super Admin AKTIF?" — bila 0, maka
+ *   akun legacy admin@marhaen.com di-REAKTIVASI (bukan disuspend) agar
+ *   produksi tidak pernah kehabisan pintu masuk admin.
+ */
 async function seedSuperAdmin() {
-  const nama = process.env.SEED_ADMIN_NAMA;
-  const username = process.env.SEED_ADMIN_USERNAME;
-  const email = process.env.SEED_ADMIN_EMAIL;
+  const EMAIL_DEFAULT_ADMIN = "admin@marhaen.com";
+  const nama = process.env.SEED_ADMIN_NAMA ?? "Redaksi GMNI";
+  const username = process.env.SEED_ADMIN_USERNAME ?? "superadmin";
+  const email = process.env.SEED_ADMIN_EMAIL ?? EMAIL_DEFAULT_ADMIN;
   const password = process.env.SEED_ADMIN_PASSWORD;
 
-  if (!nama || !username || !email || !password) {
+  if (!password) {
     console.warn(
-      "  ⚠ SEED_ADMIN_* belum diisi di .env — akun Super Admin dilewati.",
+      "  ⚠ SEED_ADMIN_PASSWORD belum diisi di .env — akun Super Admin dilewati. " +
+        "Isi kredensial admin produksi lalu jalankan ulang `npm run db:seed`.",
     );
     return;
   }
@@ -431,31 +445,23 @@ async function seedSuperAdmin() {
   const role = await prisma.role.findUnique({ where: { nama: "Super Admin" } });
   if (!role) throw new Error("Role Super Admin belum ada saat seed user.");
 
-  // Pembersihan migrasi Fase 2: email seed berubah dari admin@marhaen.com ke
-  // admin@infomarhaen.or.id. Akun seed lama di-suspend & username default
-  // (mis. "superadmin") dibebaskan agar tidak bentrok dengan akun seed baru.
-  // Idempoten — hanya aktif bila email seed berbeda dari email legacy.
+  // Migrasi Fase 2: akun seed lama admin@marhaen.com — jaga agar tidak
+  // menimbulkan konflik username dengan akun seed baru, TAPI tanpa
+  // menyingkirkan satu-satunya admin aktif dari produksi.
   const LEGACY_SEED_EMAIL = "admin@marhaen.com";
   if (email !== LEGACY_SEED_EMAIL) {
     const legacy = await prisma.user.findUnique({
       where: { email: LEGACY_SEED_EMAIL },
     });
-    if (legacy) {
-      if (legacy.statusAkun === "AKTIF") {
-        await prisma.user.update({
-          where: { id: legacy.id },
-          data: { statusAkun: "SUSPEND" },
-        });
-        console.log(`  ⚠ Akun seed lama ${LEGACY_SEED_EMAIL} di-suspend (digantikan ${email}).`);
-      }
-      if (legacy.username === username) {
-        const usernameLegacy = `${username}.legacy`;
-        await prisma.user.update({
-          where: { id: legacy.id },
-          data: { username: usernameLegacy },
-        });
-        console.log(`  ⚠ Username "${username}" dipindahkan ke "${usernameLegacy}" agar dipakai akun seed baru.`);
-      }
+    if (legacy && legacy.username === username) {
+      const usernameLegacy = `${username}.legacy`;
+      await prisma.user.update({
+        where: { id: legacy.id },
+        data: { username: usernameLegacy },
+      });
+      console.log(
+        `  ⚠ Username "${username}" dipindahkan ke "${usernameLegacy}" agar dipakai akun seed baru.`,
+      );
     }
   }
 
@@ -476,8 +482,31 @@ async function seedSuperAdmin() {
       email,
       passwordHash,
       roleId: role.id,
+      statusAkun: "AKTIF",
     },
   });
+
+  // Self-healing: pastikan produksi tidak kehabisan admin aktif. Bila
+  // akun target di atas somehow bukan satu-satunya admin aktif dan legacy
+  // justru masih SUSPEND, reaktivasi legacy sebagai pintu darurat.
+  if (email !== LEGACY_SEED_EMAIL) {
+    const legacy = await prisma.user.findUnique({
+      where: { email: LEGACY_SEED_EMAIL },
+    });
+    const jumlahAdminAktif = await prisma.user.count({
+      where: { roleId: role.id, statusAkun: "AKTIF" },
+    });
+    if (legacy && legacy.statusAkun !== "AKTIF" && jumlahAdminAktif === 0) {
+      await prisma.user.update({
+        where: { id: legacy.id },
+        data: { statusAkun: "AKTIF", roleId: role.id, passwordHash },
+      });
+      console.log(
+        `  ⚠ Tidak ada Super Admin AKTIF — akun darurat ${LEGACY_SEED_EMAIL} di-REACTIVASI dengan sandi SEED_ADMIN_PASSWORD.`,
+      );
+    }
+  }
+
   console.log(`✓ Super Admin "${user.email}" siap (role: Super Admin).`);
   console.log("  ⚠ Ganti sandi bawaan sebelum produksi!");
 }

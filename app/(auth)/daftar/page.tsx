@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { DaftarForm } from "@/components/auth/DaftarForm";
+import { FormPendaftaranPublik } from "@/components/auth/FormPendaftaranPublik";
 
 export const metadata: Metadata = {
   title: "Registrasi Kader",
-  description: "Pendaftaran kader info Marhaen melalui token undangan.",
+  description: "Pendaftaran terbuka kader info Marhaen — diverifikasi Admin Redaksi.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function HalamanDaftar({
   searchParams,
@@ -15,6 +17,7 @@ export default async function HalamanDaftar({
 }) {
   const { token } = await searchParams;
 
+  // Mode invite legacy: token sah dari kader AKTIF → form undangan.
   let pengundang: string | null = null;
   if (token) {
     const pemilik = await prisma.user.findUnique({
@@ -26,25 +29,10 @@ export default async function HalamanDaftar({
     }
   }
 
-  if (!token || !pengundang) {
-    return (
-      <div className="space-y-4">
-        <h1 className="font-serif text-2xl font-extrabold text-hitam-900">
-          Token Tidak Sah
-        </h1>
-        <p className="text-sm leading-relaxed text-hitam-600">
-          Tautan undangan tidak valid atau sudah digunakan. Registrasi kader
-          hanya dapat dilakukan melalui undangan resmi dari kader aktif GMNI.
-        </p>
-        <Link
-          href="/"
-          className="inline-block border-2 border-hitam-900 px-5 py-2.5 font-sans text-sm font-bold uppercase tracking-wide text-hitam-900 transition-colors hover:bg-hitam-900 hover:text-white"
-        >
-          Kembali ke Beranda
-        </Link>
-      </div>
-    );
+  if (token && pengundang) {
+    return <DaftarForm token={token} pengundang={pengundang} />;
   }
 
-  return <DaftarForm token={token} pengundang={pengundang} />;
+  // Mode pendaftaran terbuka (tanpa token) — default baru.
+  return <FormPendaftaranPublik tokenTidakSah={Boolean(token)} />;
 }

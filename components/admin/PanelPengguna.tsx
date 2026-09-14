@@ -7,7 +7,7 @@ type PenggunaData = {
   namaLengkap: string;
   email: string;
   username: string;
-  statusAkun: "AKTIF" | "SUSPEND";
+  statusAkun: "AKTIF" | "PENDING" | "SUSPEND";
   roleNama: string;
   tokenUndangan: string | null;
   diundangOlehEmail: string | null;
@@ -87,10 +87,16 @@ export function PanelPengguna({
                   className={`border px-2 py-0.5 font-mono text-[10px] font-bold uppercase tracking-widest ${
                     u.statusAkun === "AKTIF"
                       ? "border-hitam-900 bg-kertas-200 text-hitam-700"
-                      : "border-gmnimerah-700 bg-gmnimerah-50 text-gmnimerah-700"
+                      : u.statusAkun === "PENDING"
+                        ? "border-hitam-900 bg-hitam-900 text-white"
+                        : "border-gmnimerah-700 bg-gmnimerah-50 text-gmnimerah-700"
                   }`}
                 >
-                  {u.statusAkun === "AKTIF" ? "Aktif" : "Ditangguhkan"}
+                  {u.statusAkun === "AKTIF"
+                    ? "Aktif"
+                    : u.statusAkun === "PENDING"
+                      ? "Menunggu Verifikasi"
+                      : "Ditangguhkan"}
                 </span>
                 <span className="font-mono text-[11px] uppercase tracking-wider text-hitam-400">
                   {u.roleNama}

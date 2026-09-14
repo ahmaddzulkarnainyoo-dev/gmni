@@ -485,3 +485,7 @@ Semua keputusan di Bagian 1–12 dokumen ini adalah hasil klarifikasi bertahap d
 ---
 
 *Dokumen ini adalah sumber kebenaran tunggal (single source of truth) untuk proyek Suara Marhaen. Update dokumen ini setiap kali ada keputusan baru yang mengubah scope.*
+
+perubahan selama ngoding.
+ketika user mencet daftar tampil form seperti biasa.
+kedua jalur login admin sama dengan akun biasa.
