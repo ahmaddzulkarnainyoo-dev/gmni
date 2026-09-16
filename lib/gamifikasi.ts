@@ -1,7 +1,7 @@
 /**
- * Mesin gamifikasi kader (Sub-Fase 3.2 · blueprint 8.4 & 7.7).
+ * Mesin gamifikasi kader (Sub-Fase 3.2 ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· blueprint 8.4 & 7.7).
  * Poin: ARTIKEL_TERBIT=10, KOMENTAR_TAMPIL=2, AKTIF_HARIAN=1.
- * Jendela mingguan: Senin 00:00 WIB — reset via filter tanggal (tanpa cron).
+ * Jendela mingguan: Senin 00:00 WIB ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â reset via filter tanggal (tanpa cron).
  * Filter anonimitas mutlak: hanya artikel ASLI + tidak dikecualikan.
  */
 import { prisma } from "@/lib/prisma";
@@ -37,7 +37,14 @@ export function labelPeriodeMingguan(sekarang = new Date()): string {
   return `${awal.getUTCFullYear()}-W${String(minggu).padStart(2, "0")}`;
 }
 
-/** Tanggal hari UTC (tengah malam) untuk dedup AKTIF_HARIAN. */
+/** Tanggal hari dalam zona WIB (tengah malam WIB) untuk dedup AKTIF_HARIAN. */
+export function tanggalHariWib(sekarang = new Date()): Date {
+  const wib = new Date(sekarang.getTime() + 7 * 3_600_000);
+  const tengahMalamWib = Date.UTC(wib.getUTCFullYear(), wib.getUTCMonth(), wib.getUTCDate());
+  return new Date(tengahMalamWib - 7 * 3_600_000);
+}
+
+/** Alias lawas (UTC): dipertahankan untuk kompatibilitas, JANGAN dipakai di kode baru. */
 export function tanggalHariUtc(sekarang = new Date()): Date {
   return new Date(
     Date.UTC(sekarang.getUTCFullYear(), sekarang.getUTCMonth(), sekarang.getUTCDate()),
@@ -57,7 +64,7 @@ export async function catatAktivitas(
         userId_jenis_tanggalHari: {
           userId,
           jenis,
-          tanggalHari: tanggalHariUtc(tanggal),
+          tanggalHari: tanggalHariWib(tanggal),
         },
       },
       update: {},
@@ -66,7 +73,7 @@ export async function catatAktivitas(
         jenis,
         poin: POIN_AKTIVITAS[jenis],
         detail: opsi?.detail,
-        tanggalHari: tanggalHariUtc(tanggal),
+        tanggalHari: tanggalHariWib(tanggal),
         tanggal,
       },
     });
@@ -83,7 +90,7 @@ export async function tarikPoinEntitas(detail: string): Promise<void> {
     // Best-effort.
   }
 }
-/** Beri badge idempoten (upsert — duplikat diabaikan). */
+/** Beri badge idempoten (upsert ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â duplikat diabaikan). */
 export async function beriBadge(
   userId: string,
   jenisBadge: string,
@@ -109,7 +116,7 @@ export const LABEL_BADGE: Record<string, string> = {
 };
 /** Perbarui streak harian kader + badge milestone (3/7/30 hari). */
 export async function perbaruiStreak(userId: string, sekarang = new Date()): Promise<number> {
-  const hariIni = tanggalHariUtc(sekarang);
+  const hariIni = tanggalHariWib(sekarang);
   const kemarin = new Date(hariIni.getTime() - 86400000);
   try {
     const lama = await prisma.streakKader.findUnique({ where: { userId } });
@@ -136,7 +143,7 @@ export async function perbaruiStreak(userId: string, sekarang = new Date()): Pro
   }
 }
 
-/** Evaluasi badge lifetime (artikel & komentar) — dipanggil lazily. */
+/** Evaluasi badge lifetime (artikel & komentar) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â dipanggil lazily. */
 export async function evaluasiBadgeKader(userId: string): Promise<void> {
   try {
     const [jumlahArtikel, jumlahKomentar] = await Promise.all([
@@ -248,23 +255,33 @@ export async function ambilPeringkatMingguan(
 }
 
 /** Ringkasan poin & peringkat seorang kader untuk widget dasbor. */
+/** Ringkasan poin & peringkat seorang kader untuk widget dasbor. */
 export async function ambilRingkasanKader(userId: string): Promise<{
   poinMingguIni: number;
   peringkat: number | null;
   streak: number;
   jumlahBadge: number;
+  /** Rincian per jenis aktivitas minggu ini (untuk transparansi widget). */
+  rincian: Array<{ jenis: string; jumlah: number; poin: number }>;
 }> {
   const awal = awalMingguBerjalan();
   const akhir = akhirMingguBerjalan();
-  const [agregat, streak, jumlahBadge] = await Promise.all([
+  const [agregat, perJenis, streak, jumlahBadge] = await Promise.all([
     prisma.kegiatanKader.aggregate({
       where: { userId, tanggal: { gte: awal, lt: akhir } },
+      _sum: { poin: true },
+    }),
+    prisma.kegiatanKader.groupBy({
+      by: ["jenis"],
+      where: { userId, tanggal: { gte: awal, lt: akhir } },
+      _count: { _all: true },
       _sum: { poin: true },
     }),
     prisma.streakKader.findUnique({ where: { userId } }),
     prisma.pencapaian.count({ where: { userId } }),
   ]);
   const poinMingguIni = agregat._sum.poin ?? 0;
+  const rincian = perJenis.map((r) => ({ jenis: r.jenis, jumlah: r._count._all, poin: r._sum.poin ?? 0 }));
   let peringkat: number | null = null;
   if (poinMingguIni > 0) {
     const diAtas = await prisma.kegiatanKader.groupBy({
@@ -275,7 +292,7 @@ export async function ambilRingkasanKader(userId: string): Promise<{
     });
     peringkat = diAtas.length + 1;
   }
-  return { poinMingguIni, peringkat, streak: streak?.jumlahHariBeruntun ?? 0, jumlahBadge };
+  return { poinMingguIni, peringkat, streak: streak?.jumlahHariBeruntun ?? 0, jumlahBadge, rincian };
 }
 
 /** Snapshot top-N minggu berjalan + badge TOP_3_MINGGU (lazily). */

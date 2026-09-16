@@ -4,6 +4,7 @@ import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { LABEL_STATUS, GAYA_STATUS } from "@/lib/label-status";
 import { TombolAjukan } from "@/components/dasbor/TombolAjukan";
+import { amanAsync } from "@/lib/kueri-aman";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Tulisan Saya" };
@@ -12,22 +13,40 @@ export const dynamic = "force-dynamic";
 export default async function HalamanTulisanSaya() {
   const user = await requirePermission("artikel.buat");
 
-  const daftar = await prisma.artikel.findMany({
-    where: { penulisId: user.id },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      judul: true,
-      slug: true,
-      status: true,
-      visibilitasPenulis: true,
-      namaTampilanKustom: true,
-      catatanRevisi: true,
-      tanggalDiajukan: true,
-      tanggalTerbit: true,
-      kategori: { select: { nama: true } },
-    },
-  });
+  const daftar = await amanAsync(
+    () =>
+      prisma.artikel.findMany({
+        where: { penulisId: user.id },
+        orderBy: { updatedAt: "desc" },
+        select: {
+          id: true,
+          judul: true,
+          slug: true,
+          status: true,
+          visibilitasPenulis: true,
+          namaTampilanKustom: true,
+          catatanRevisi: true,
+          tanggalDiajukan: true,
+          tanggalTerbit: true,
+          kategori: { select: { nama: true } },
+        },
+      }),
+    null,
+  );
+
+  if (!daftar) {
+    return (
+      <div className="mx-auto max-w-4xl">
+        <p
+          role="alert"
+          className="border-2 border-gmnimerah-500 bg-gmnimerah-50 px-3 py-2 text-sm font-semibold text-gmnimerah-700"
+        >
+          Daftar tulisan belum dapat dimuat. Coba muat ulang halaman — tulisan
+          Anda aman tersimpan di database.
+        </p>
+      </div>
+    );
+  }
 
   const bisaDiajukan = (status: string) => status === "DRAFT" || status === "DIMINTA_REVISI";
   const bisaDikonfirmasi = ["DIAJUKAN", "SEDANG_DITINJAU"].includes;

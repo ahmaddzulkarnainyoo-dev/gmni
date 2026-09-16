@@ -18,19 +18,25 @@ export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const { id } = await params;
-  const user = await getSessionUser();
-  if (!user) {
-    return NextResponse.json({ error: "Harus masuk terlebih dahulu." }, { status: 401 });
-  }
+  try {
+    const { id } = await params;
+    const user = await getSessionUser();
+    if (!user) {
+      return NextResponse.json({ error: "Harus masuk terlebih dahulu." }, { status: 401 });
+    }
 
-  const artikel = await prisma.artikel.findUnique({ where: { id } });
-  if (!artikel) {
-    return NextResponse.json({ error: "Artikel tidak ditemukan." }, { status: 404 });
-  }
+    const artikel = await prisma.artikel.findUnique({ where: { id } });
+    if (!artikel) {
+      return NextResponse.json({ error: "Artikel tidak ditemukan." }, { status: 404 });
+    }
 
-  const body = (await request.json()) as Record<string, unknown>;
-  const aksi = typeof body.aksi === "string" ? body.aksi : null;
+    let body: Record<string, unknown>;
+    try {
+      body = (await request.json()) as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: "Isi permintaan tidak valid." }, { status: 400 });
+    }
+    const aksi = typeof body.aksi === "string" ? body.aksi : null;
 
   if (aksi) {
     // ── MODE REDAKSI ──────────────────────────────────────────────
@@ -107,6 +113,17 @@ export async function PATCH(
     );
   }
 
+  // Validasi kategoriIds SEBELUM masuk transaksi: tak boleh kosong/tak dikenal.
+  // Mencegah throw Prisma FK di dalam transaksi (yang memicu boundary).
+  if (typeof body.kategoriId === "string" && body.kategoriId.trim()) {
+    const kategoriAda = await prisma.kategori.findUnique({
+      where: { id: body.kategoriId.trim() },
+    });
+    if (!kategoriAda) {
+      return NextResponse.json({ error: "Kategori tidak ditemukan." }, { status: 400 });
+    }
+  }
+
   const judul = typeof body.judul === "string" ? body.judul.trim() : null;
   const konten = typeof body.konten === "string" ? body.konten.trim() : null;
   if (judul && judul.length < 8) {
@@ -128,9 +145,17 @@ export async function PATCH(
 
   const data: Record<string, unknown> = {};
   if (judul) data.judul = judul;
-  if (konten) data.konten = mdKeHtml(konten);
+  if (konten) {
+    try {
+      data.konten = mdKeHtml(konten);
+    } catch {
+      data.konten = konten;
+    }
+  }
   if (typeof body.ringkasan === "string") data.ringkasan = body.ringkasan.trim() || null;
-  if (typeof body.kategoriId === "string") data.kategoriId = body.kategoriId;
+  if (typeof body.kategoriId === "string" && body.kategoriId.trim()) {
+    data.kategoriId = body.kategoriId.trim();
+  }
   data.visibilitasPenulis = visibilitas;
   data.namaTampilanKustom =
     visibilitas === "SAMARAN" ? String(body.namaTampilanKustom).trim() : null;
@@ -164,4 +189,8 @@ export async function PATCH(
   });
 
   return NextResponse.json({ ok: true, status: hasil.status });
+  } catch (error) {
+    console.error("[artikel] Gagal memperbarui:", error);
+    return NextResponse.json({ error: "Gagal menyimpan perubahan artikel." }, { status: 500 });
+  }
 }

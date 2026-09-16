@@ -7,6 +7,16 @@ import type { VisibilitasPenulis } from "@prisma/client";
 
 const PILIHAN_VISIBILITAS: VisibilitasPenulis[] = ["ASLI", "SAMARAN", "REDAKSI"];
 
+/** Konversi markdown aman: parser tak boleh menggagalkan simpan draf. */
+function mdKeHtmlAman(teks: string): string {
+  try {
+    return mdKeHtml(teks);
+  } catch (error) {
+    console.error("[artikel] mdKeHtml gagal, simpan mentah:", error);
+    return teks;
+  }
+}
+
 /** Membuat artikel baru: DRAFT, atau langsung DIAJUKAN ke redaksi. */
 export async function POST(request: Request) {
   const user = await getSessionUser();
@@ -31,7 +41,7 @@ export async function POST(request: Request) {
 
     const judul = body.judul?.trim();
     const konten = body.konten?.trim();
-    const kategoriId = body.kategoriId;
+    const kategoriId = typeof body.kategoriId === "string" ? body.kategoriId.trim() : "";
     const visibilitas: VisibilitasPenulis | undefined = PILIHAN_VISIBILITAS.includes(
       body.visibilitasPenulis as VisibilitasPenulis,
     )
@@ -50,8 +60,13 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
+    // Validasi kategori SEBELUM query Prisma: id kosong/tak valid langsung 400
+    // (bukan PrismaClientValidationError via findUnique id undefined).
+    if (!kategoriId) {
+      return NextResponse.json({ error: "Kategori wajib dipilih." }, { status: 400 });
+    }
     const kategoriAda = await prisma.kategori.findUnique({ where: { id: kategoriId } });
-    if (!kategoriAda || !kategoriId) {
+    if (!kategoriAda) {
       return NextResponse.json({ error: "Kategori tidak ditemukan." }, { status: 400 });
     }
 
@@ -66,7 +81,7 @@ export async function POST(request: Request) {
 
     const slug = await slugArtikelUnik(judul);
     const namaSamaran = visibilitas === "SAMARAN" ? body.namaTampilanKustom!.trim() : null;
-    const kontenHtml = mdKeHtml(konten);
+    const kontenHtml = mdKeHtmlAman(konten);
 
     const artikel = await prisma.artikel.create({
       data: {

@@ -11,10 +11,18 @@ import {
 } from "@/lib/gamifikasi";
 import { fmtTanggal } from "@/lib/articles";
 
+
+/** Label Indonesia untuk jenis aktivitas ledger (transparansi poin). */
+function labelJenis(jenis: string): string {
+  if (jenis === "ARTIKEL_TERBIT") return "Artikel terbit";
+  if (jenis === "KOMENTAR_TAMPIL") return "Komentar";
+  return "Harian";
+}
+
 export const dynamic = "force-dynamic";
 
 /**
- * Dasbor kader — ringkasan gamifikasi mingguan (blueprint 8.4):
+ * Dasbor kader ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â ringkasan gamifikasi mingguan (blueprint 8.4):
  * poin minggu ini, peringkat, streak, badge + mini board top-5.
  */
 export default async function DasborPage() {
@@ -25,22 +33,26 @@ export default async function DasborPage() {
     ambilPeringkatMingguan(5),
   ]);
 
+  const rincianTeks = ringkasan.rincian.length > 0
+    ? ringkasan.rincian.map((r) => `${labelJenis(r.jenis)} Ãƒâ€”${r.jumlah}`).join(" Ã‚Â· ")
+    : (ringkasan.poinMingguIni > 0 ? "Poin dari periode sebelumnya" : "Belum ada aktivitas tercatat");
+
   const kartu: Array<{ label: string; nilai: string; sub: string; href?: string }> = [
     {
       label: "Poin Minggu Ini",
       nilai: String(ringkasan.poinMingguIni),
-      sub: "Artikel 10 · Komentar 2 · Harian 1",
+      sub: `Artikel 10 Ã‚Â· Komentar 2 Ã‚Â· Harian 1 Ã¢â‚¬â€ ${rincianTeks}`,
     },
     {
       label: "Peringkat",
-      nilai: ringkasan.peringkat ? `#${ringkasan.peringkat}` : "—",
+      nilai: ringkasan.peringkat ? `#${ringkasan.peringkat}` : "ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â",
       sub: "Di antara kader aktif minggu ini",
       href: "/leaderboard",
     },
     {
       label: "Streak Aktif",
-      nilai: ringkasan.streak > 0 ? `${ringkasan.streak} hari` : "—",
-      sub: "Badge di 3 · 7 · 30 hari",
+      nilai: ringkasan.streak > 0 ? `${ringkasan.streak} hari` : "ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â",
+      sub: "Badge di 3 Ãƒâ€šÃ‚Â· 7 Ãƒâ€šÃ‚Â· 30 hari",
     },
     {
       label: "Lencana",
@@ -58,7 +70,7 @@ export default async function DasborPage() {
         Ringkasan Perjuangan
       </h1>
       <p className="mt-2 font-mono text-[11px] uppercase tracking-widest text-hitam-400">
-        Periode {labelPeriodeMingguan()} · mulai {fmtTanggal(awalMingguBerjalan())}
+        Periode {labelPeriodeMingguan()} Ãƒâ€šÃ‚Â· mulai {fmtTanggal(awalMingguBerjalan())}
       </p>
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -74,7 +86,7 @@ export default async function DasborPage() {
                 href={k.href}
                 className="mt-2 inline-block font-mono text-[11px] font-bold uppercase tracking-widest text-gmnimerah-600 hover:text-gmnimerah-700"
               >
-                Lihat →
+                Lihat ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
               </Link>
             )}
           </div>
@@ -88,7 +100,7 @@ export default async function DasborPage() {
             href="/leaderboard"
             className="font-mono text-[11px] font-bold uppercase tracking-widest text-gmnimerah-600 hover:text-gmnimerah-700"
           >
-            Papan Penuh →
+            Papan Penuh ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢
           </Link>
         </div>
         {limaBesar.length === 0 ? (
