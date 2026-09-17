@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata() {
   return {
-    title: `Leaderboard ${labelPeriodeMingguan()} — info Marhaen`,
+    title: `Leaderboard ${labelPeriodeMingguan()} - info Marhaen`,
     description:
       "Papan peringkat mingguan kader GMNI: penulis terajin & paling aktif diskusi. Reset tiap Senin 00:00 WIB.",
   };
@@ -44,14 +44,15 @@ export default async function HalamanLeaderboard() {
         Leaderboard <span className="italic text-gmnimerah-600">Mingguan</span>
       </h1>
       <p className="mt-3 max-w-2xl text-sm leading-relaxed text-hitam-500">
-        Periode {labelPeriodeMingguan()} (mulai {fmtTanggal(awalMingguBerjalan())} — reset tiap
+        Periode {labelPeriodeMingguan()} (mulai {fmtTanggal(awalMingguBerjalan())} - reset tiap
         Senin 00:00 WIB). {totalMingguLalu} aktivitas tercatat minggu ini. Tulisan samaran &amp;
-        redaksi tidak dihitung — demi janji anonimitas.
+        redaksi tidak dihitung - demi janji anonimitas. Akun tim redaksi/admin tidak diikutkan di
+        papan ini.
       </p>
       <div className="mt-4 flex flex-wrap gap-2 font-mono text-[11px] uppercase tracking-widest text-hitam-500">
-        <span className="border border-hitam-300 bg-white px-2 py-1">Artikel terbit · 10 pts</span>
-        <span className="border border-hitam-300 bg-white px-2 py-1">Komentar · 2 pts</span>
-        <span className="border border-hitam-300 bg-white px-2 py-1">Aktif harian · 1 pt</span>
+        <span className="border border-hitam-300 bg-white px-2 py-1">Artikel terbit - 10 pts</span>
+        <span className="border border-hitam-300 bg-white px-2 py-1">Komentar - 2 pts</span>
+        <span className="border border-hitam-300 bg-white px-2 py-1">Aktif harian - 1 pt</span>
       </div>
 
       {baris.length === 0 ? (
@@ -88,7 +89,7 @@ export default async function HalamanLeaderboard() {
                   }`}
                 >
                   @{b.username}
-                  {b.daerahAsal ? ` · ${b.daerahAsal}` : ""}
+                  {b.daerahAsal ? ` - ${b.daerahAsal}` : ""}
                 </p>
                 <p className="mt-3 font-mono text-2xl font-extrabold">{b.totalPoin} pts</p>
                 <p
@@ -96,7 +97,7 @@ export default async function HalamanLeaderboard() {
                     i === 0 ? "text-kertas-300" : "text-hitam-500"
                   }`}
                 >
-                  {b.jumlahArtikel} artikel · {b.jumlahKomentar} komentar
+                  {b.jumlahArtikel} artikel - {b.jumlahKomentar} komentar
                 </p>
               </Link>
             ))}
@@ -123,7 +124,7 @@ export default async function HalamanLeaderboard() {
                       </span>
                     </Link>
                     <span className="hidden font-mono text-[11px] uppercase tracking-widest text-hitam-400 sm:inline">
-                      {b.jumlahArtikel}a · {b.jumlahKomentar}k
+                      {b.jumlahArtikel}a - {b.jumlahKomentar}k
                     </span>
                     <span className="font-mono text-sm font-bold text-gmnimerah-600">
                       {b.totalPoin} pts

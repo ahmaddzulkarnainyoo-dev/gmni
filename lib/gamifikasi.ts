@@ -1,11 +1,18 @@
 /**
- * Mesin gamifikasi kader (Sub-Fase 3.2 ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â· blueprint 8.4 & 7.7).
+ * Mesin gamifikasi kader (Sub-Fase 3.2 - blueprint 8.4 & 7.7).
  * Poin: ARTIKEL_TERBIT=10, KOMENTAR_TAMPIL=2, AKTIF_HARIAN=1.
- * Jendela mingguan: Senin 00:00 WIB ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â reset via filter tanggal (tanpa cron).
+ * Jendela mingguan: Senin 00:00 WIB - reset via filter tanggal (tanpa cron).
  * Filter anonimitas mutlak: hanya artikel ASLI + tidak dikecualikan.
  */
 import { prisma } from "@/lib/prisma";
 import type { JenisAktivitas } from "@prisma/client";
+
+/**
+ * Nama role tim redaksi/admin yang DIKECUALIKAN dari papan peringkat kader.
+ * Papan publik & dasbor kader murni berisi persaingan kader/anggota; panel
+ * audit /admin/leaderboard dapat menyertakannya lewat opsi sertakanAdmin.
+ */
+export const PERAN_ADMIN: readonly string[] = ["Super Admin", "Editor"];
 
 export const POIN_AKTIVITAS: Record<JenisAktivitas, number> = {
   ARTIKEL_TERBIT: 10,
@@ -90,7 +97,7 @@ export async function tarikPoinEntitas(detail: string): Promise<void> {
     // Best-effort.
   }
 }
-/** Beri badge idempoten (upsert ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â duplikat diabaikan). */
+/** Beri badge idempoten (upsert - duplikat diabaikan). */
 export async function beriBadge(
   userId: string,
   jenisBadge: string,
@@ -143,7 +150,7 @@ export async function perbaruiStreak(userId: string, sekarang = new Date()): Pro
   }
 }
 
-/** Evaluasi badge lifetime (artikel & komentar) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â dipanggil lazily. */
+/** Evaluasi badge lifetime (artikel & komentar) - dipanggil lazily). */
 export async function evaluasiBadgeKader(userId: string): Promise<void> {
   try {
     const [jumlahArtikel, jumlahKomentar] = await Promise.all([
@@ -176,22 +183,26 @@ export type BarisPeringkat = {
   jumlahKomentar: number;
   /** True bila akun kader menyembunyikan profil (hanya diisi mode admin). */
   profilTersembunyi?: boolean;
+  /** Nama role akun (dipakai panel audit untuk menandai tim redaksi/admin). */
+  roleNama?: string;
 };
 
 /** Agregasi leaderboard minggu berjalan dari ledger KegiatanKader. */
 export async function ambilPeringkatMingguan(
   batas = 50,
-  opsi?: { sertakanTersembunyi?: boolean },
+  opsi?: { sertakanTersembunyi?: boolean; sertakanAdmin?: boolean },
 ): Promise<BarisPeringkat[]> {
   const awal = awalMingguBerjalan();
   const akhir = akhirMingguBerjalan();
   const sertakanTersembunyi = opsi?.sertakanTersembunyi === true;
+  const sertakanAdmin = opsi?.sertakanAdmin === true;
   const ledger = await prisma.kegiatanKader.groupBy({
     by: ["userId"],
     where: { tanggal: { gte: awal, lt: akhir } },
     _sum: { poin: true },
     orderBy: { _sum: { poin: "desc" } },
-    take: batas * 2,
+    // Ambil kandidat lebih banyak karena sebagian tersaring (nonaktif/tersembunyi/admin).
+    take: batas * 3,
   });
   if (ledger.length === 0) return [];
   const userIds = ledger.map((l) => l.userId);
@@ -202,6 +213,8 @@ export async function ambilPeringkatMingguan(
         statusAkun: "AKTIF",
         // Panel admin boleh menyertakan kader berperil tersembunyi.
         ...(sertakanTersembunyi ? {} : { profilTersembunyi: false }),
+        // Papan kader murni: akun tim redaksi/admin tidak diikutkan.
+        ...(sertakanAdmin ? {} : { role: { nama: { notIn: [...PERAN_ADMIN] } } }),
       },
       select: {
         id: true,
@@ -210,6 +223,7 @@ export async function ambilPeringkatMingguan(
         fotoProfil: true,
         daerahAsal: true,
         profilTersembunyi: true,
+        role: { select: { nama: true } },
       },
     }),
     prisma.artikel.groupBy({
@@ -248,13 +262,13 @@ export async function ambilPeringkatMingguan(
       jumlahArtikel: petaArtikel.get(u.id) ?? 0,
       jumlahKomentar: petaKomentar.get(u.id) ?? 0,
       profilTersembunyi: (u as { profilTersembunyi?: boolean }).profilTersembunyi ?? false,
+      roleNama: u.role.nama,
     });
     if (baris.length >= batas) break;
   }
   return baris;
 }
 
-/** Ringkasan poin & peringkat seorang kader untuk widget dasbor. */
 /** Ringkasan poin & peringkat seorang kader untuk widget dasbor. */
 export async function ambilRingkasanKader(userId: string): Promise<{
   poinMingguIni: number;
@@ -266,7 +280,7 @@ export async function ambilRingkasanKader(userId: string): Promise<{
 }> {
   const awal = awalMingguBerjalan();
   const akhir = akhirMingguBerjalan();
-  const [agregat, perJenis, streak, jumlahBadge] = await Promise.all([
+  const [agregat, perJenis, streak, jumlahBadge, pemilik] = await Promise.all([
     prisma.kegiatanKader.aggregate({
       where: { userId, tanggal: { gte: awal, lt: akhir } },
       _sum: { poin: true },
@@ -279,18 +293,41 @@ export async function ambilRingkasanKader(userId: string): Promise<{
     }),
     prisma.streakKader.findUnique({ where: { userId } }),
     prisma.pencapaian.count({ where: { userId } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { statusAkun: true, profilTersembunyi: true, role: { select: { nama: true } } },
+    }),
   ]);
   const poinMingguIni = agregat._sum.poin ?? 0;
   const rincian = perJenis.map((r) => ({ jenis: r.jenis, jumlah: r._count._all, poin: r._sum.poin ?? 0 }));
+  // Peringkat hanya bermakna bila akun ikut papan kader (AKTIF, profil tampil,
+  // bukan tim redaksi/admin) - sejalan dengan filter ambilPeringkatMingguan().
+  const ikutPapan =
+    pemilik !== null &&
+    pemilik.statusAkun === "AKTIF" &&
+    !pemilik.profilTersembunyi &&
+    !PERAN_ADMIN.includes(pemilik.role.nama);
   let peringkat: number | null = null;
-  if (poinMingguIni > 0) {
+  if (poinMingguIni > 0 && ikutPapan) {
     const diAtas = await prisma.kegiatanKader.groupBy({
       by: ["userId"],
       where: { tanggal: { gte: awal, lt: akhir } },
       _sum: { poin: true },
       having: { poin: { _sum: { gt: poinMingguIni } } },
     });
-    peringkat = diAtas.length + 1;
+    const kandidat = diAtas.map((d) => d.userId);
+    const jumlahDiAtas =
+      kandidat.length > 0
+        ? await prisma.user.count({
+            where: {
+              id: { in: kandidat },
+              statusAkun: "AKTIF",
+              profilTersembunyi: false,
+              role: { nama: { notIn: [...PERAN_ADMIN] } },
+            },
+          })
+        : 0;
+    peringkat = jumlahDiAtas + 1;
   }
   return { poinMingguIni, peringkat, streak: streak?.jumlahHariBeruntun ?? 0, jumlahBadge, rincian };
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-/** Heartbeat kehadiran harian — kirim sekali per hari per browser. */
+/** Heartbeat kehadiran harian - kirim sekali per hari per browser. */
 export function WidgetAktivitas() {
   const terkirim = useRef(false);
   useEffect(() => {
@@ -13,7 +13,7 @@ export function WidgetAktivitas() {
     try {
       if (localStorage.getItem(kunci) === hariIni) return;
     } catch {
-      // lanjut — localStorage tidak tersedia
+      // lanjut - localStorage tidak tersedia
     }
     fetch("/api/kader/aktivitas", { method: "POST" })
       .then(() => {

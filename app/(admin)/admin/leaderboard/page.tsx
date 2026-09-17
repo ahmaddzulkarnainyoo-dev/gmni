@@ -6,6 +6,7 @@ import {
   ambilPeringkatMingguan,
   awalMingguBerjalan,
   labelPeriodeMingguan,
+  PERAN_ADMIN,
 } from "@/lib/gamifikasi";
 
 export const metadata: Metadata = { title: "Kelola Leaderboard" };
@@ -22,7 +23,8 @@ export default async function HalamanLeaderboardAdmin() {
   const [baris, gagalMemuat] = await amanAsync(
     () =>
       Promise.all([
-        ambilPeringkatMingguan(25, { sertakanTersembunyi: true }),
+        // Panel audit: sertakan kader tersembunyi + akun tim redaksi/admin.
+        ambilPeringkatMingguan(25, { sertakanTersembunyi: true, sertakanAdmin: true }),
         Promise.resolve(false),
       ]),
     [[], true],
@@ -43,7 +45,8 @@ export default async function HalamanLeaderboardAdmin() {
         </h1>
         <p className="mt-1 text-sm text-hitam-500">
           Papan peringkat kontribusi kader minggu berjalan (periode {periode},
-          mulai {awal}). Poin: artikel 10 · komentar 2 · aktivitas harian 1.
+          mulai {awal}). Poin: artikel 10 - komentar 2 - aktivitas harian 1. Panel audit
+          ini menyertakan kader tersembunyi &amp; akun tim redaksi/admin.
         </p>
       </div>
 
@@ -52,7 +55,7 @@ export default async function HalamanLeaderboardAdmin() {
           role="alert"
           className="mt-4 border-2 border-gmnimerah-500 bg-gmnimerah-50 px-4 py-2.5 text-sm font-semibold text-gmnimerah-700"
         >
-          Data tidak dapat dimuat sementara — periksa koneksi database lalu
+          Data tidak dapat dimuat sementara - periksa koneksi database lalu
           muat ulang halaman.
         </p>
       )}
@@ -108,6 +111,11 @@ export default async function HalamanLeaderboardAdmin() {
                     {b.profilTersembunyi === true && (
                       <span className="ml-2 inline-block border border-hitam-900 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-hitam-600">
                         Tersembunyi
+                      </span>
+                    )}
+                    {b.roleNama && PERAN_ADMIN.includes(b.roleNama) && (
+                      <span className="ml-2 inline-block border border-gmnimerah-500 px-1.5 py-0.5 font-mono text-[9px] font-bold uppercase tracking-widest text-gmnimerah-600">
+                        Tim Redaksi
                       </span>
                     )}
                   </td>

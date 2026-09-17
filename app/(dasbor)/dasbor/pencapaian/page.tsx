@@ -23,7 +23,7 @@ export default async function HalamanPencapaian() {
       <KickerLabel>Pencapaian</KickerLabel>
       <h1 className="mt-2 font-serif text-3xl font-extrabold text-hitam-900">Trophy Case</h1>
       <p className="mt-2 text-sm text-hitam-500">
-        {badge.length} lencana terkumpul — tersimpan permanen sebagai bukti perjuangan.
+        {badge.length} lencana terkumpul - tersimpan permanen sebagai bukti perjuangan.
       </p>
 
       {badge.length === 0 ? (
@@ -42,7 +42,7 @@ export default async function HalamanPencapaian() {
                 className="mx-auto grid h-12 w-12 place-items-center bg-gmnimerah-500 font-serif text-2xl font-extrabold text-white"
                 style={{ clipPath: "polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%)" }}
               >
-                ★
+                &starf;
               </span>
               <p className="mt-3 font-serif text-lg font-bold text-hitam-900">
                 {LABEL_BADGE[b.jenisBadge] ?? b.jenisBadge}

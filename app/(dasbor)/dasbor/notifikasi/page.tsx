@@ -38,7 +38,7 @@ function judulAksi(aksi: string): { judul: string; gaya: string } {
 
 /**
  * Notifikasi in-app (v1): turunan AuditLog atas tulisan milik kader.
- * Tanpa model baru — hanya membaca jejak status artikel yang ditulis redaksi.
+ * Tanpa model baru - hanya membaca jejak status artikel yang ditulis redaksi.
  */
 export default async function HalamanNotifikasi() {
   const user = await requireAuthUser();
@@ -77,7 +77,7 @@ export default async function HalamanNotifikasi() {
     <div className="mx-auto max-w-3xl">
       <KickerLabel>Dasbor Kader</KickerLabel>
       <h1 className="mt-2 font-serif text-2xl font-extrabold text-hitam-900 md:text-3xl">Notifikasi</h1>
-      <p className="mt-1 text-sm text-hitam-500">Pembaruan status tulisanmu oleh redaksi — terbaru di atas.</p>
+      <p className="mt-1 text-sm text-hitam-500">Pembaruan status tulisanmu oleh redaksi - terbaru di atas.</p>
 
       {entri.length === 0 ? (
         <div className="mt-8 border-4 border-dashed border-hitam-200 bg-kertas-100 p-10 text-center">
@@ -96,7 +96,7 @@ export default async function HalamanNotifikasi() {
                   <span className="font-mono text-[11px] uppercase tracking-wider text-hitam-400">{fmtTanggal(n.tanggal)}</span>
                 </div>
                 <p className="mt-2 font-serif text-base font-bold text-hitam-900">{n.artikelJudul}</p>
-                <p className="mt-1 text-sm text-hitam-500">{n.aktorNama ? `oleh ${n.aktorNama}` : "oleh redaksi"}{n.statusArtikel === "DIMINTA_REVISI" ? " — perbaiki tulisanmu." : "."}</p>
+                <p className="mt-1 text-sm text-hitam-500">{n.aktorNama ? `oleh ${n.aktorNama}` : "oleh redaksi"}{n.statusArtikel === "DIMINTA_REVISI" ? " - perbaiki tulisanmu." : "."}</p>
                 {n.statusArtikel === "DIMINTA_REVISI" && (
                   <Link href={`/dasbor/tulis?id=${n.artikelId}`} className="mt-3 inline-block bg-gmnimerah-500 px-4 py-2 font-mono text-[11px] font-bold uppercase tracking-widest text-white transition-colors hover:bg-gmnimerah-600">Perbaiki Sekarang</Link>
                 )}

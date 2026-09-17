@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Pesan" };
 export const dynamic = "force-dynamic";
 
 /**
- * DM antar kader — /dasbor/pesan (blueprint 8.5).
+ * DM antar kader - /dasbor/pesan (blueprint 8.5).
  * Prefetch daftar room di server, interaksi + polling di client.
  */
 export default async function HalamanPesan({
@@ -91,7 +91,7 @@ export default async function HalamanPesan({
           Pesan Kader
         </h1>
         <p className="mt-1 text-sm text-hitam-500">
-          Obrolan langsung 1-on-1 antar kader — privat, bukan untuk publik.
+          Obrolan langsung 1-on-1 antar kader - privat, bukan untuk publik.
         </p>
       </div>
       <div className="mt-6">

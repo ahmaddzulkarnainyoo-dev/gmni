@@ -41,7 +41,7 @@ export default async function HalamanTulisanSaya() {
           role="alert"
           className="border-2 border-gmnimerah-500 bg-gmnimerah-50 px-3 py-2 text-sm font-semibold text-gmnimerah-700"
         >
-          Daftar tulisan belum dapat dimuat. Coba muat ulang halaman — tulisan
+          Daftar tulisan belum dapat dimuat. Coba muat ulang halaman - tulisan
           Anda aman tersimpan di database.
         </p>
       </div>
@@ -49,7 +49,7 @@ export default async function HalamanTulisanSaya() {
   }
 
   const bisaDiajukan = (status: string) => status === "DRAFT" || status === "DIMINTA_REVISI";
-  const bisaDikonfirmasi = ["DIAJUKAN", "SEDANG_DITINJAU"].includes;
+  const bisaDikonfirmasi = (status: string) => status === "DIAJUKAN" || status === "SEDANG_DITINJAU";
 
   return (
     <div className="mx-auto max-w-4xl">
@@ -77,7 +77,7 @@ export default async function HalamanTulisanSaya() {
             Belum ada tulisan.
           </p>
           <p className="mt-2 text-sm text-hitam-500">
-            Mulai menulis sekarang — suara kader adalah bahan bakar perjuangan.
+            Mulai menulis sekarang - suara kader adalah bahan bakar perjuangan.
           </p>
           <Link
             href="/dasbor/tulis"

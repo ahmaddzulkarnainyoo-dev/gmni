@@ -79,7 +79,7 @@ export function RuangObrolan({
       const data = (await res.json()) as { percakapan?: RoomItem[] };
       if (data.percakapan) setRoom(data.percakapan);
     } catch {
-      /* abaikan — polling berikutnya mencoba lagi */
+      /* abaikan - polling berikutnya mencoba lagi */
     }
   }, []);
 

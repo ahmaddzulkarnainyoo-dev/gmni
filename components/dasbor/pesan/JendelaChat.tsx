@@ -79,7 +79,7 @@ export function JendelaChat({
           aria-label="Kembali ke daftar percakapan"
           className="border-2 border-hitam-900 px-2 py-1 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 md:hidden"
         >
-          ←
+          &larr;
         </button>
         <div className="grid h-10 w-10 shrink-0 place-items-center overflow-hidden border-2 border-hitam-900 bg-hitam-900 font-serif text-lg font-extrabold text-white/80">
           {lawan?.fotoProfil ? (
@@ -102,7 +102,7 @@ export function JendelaChat({
               href={`/profil/${lawan.username}`}
               className="font-mono text-[11px] uppercase tracking-widest text-gmnimerah-600 hover:text-gmnimerah-700"
             >
-              @{lawan.username} · Lihat profil
+              @{lawan.username} &middot; Lihat profil
             </Link>
           )}
         </div>
@@ -143,7 +143,7 @@ export function JendelaChat({
                     {fmtJam(p.tanggal)}
                     {milikku && (
                       <span className="ml-1">
-                        {p.status === "DIBACA" ? "· Dibaca ✓✓" : "· Terkirim ✓"}
+                        {p.status === "DIBACA" ? "- Dibaca" : "- Terkirim"}
                       </span>
                     )}
                   </p>

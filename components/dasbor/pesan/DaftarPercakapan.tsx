@@ -25,7 +25,7 @@ type RoomItem = {
 
 function potong(teks: string, batas = 60): string {
   const t = teks.replace(/\s+/g, " ").trim();
-  return t.length > batas ? `${t.slice(0, batas)}…` : t;
+  return t.length > batas ? `${t.slice(0, batas)}...` : t;
 }
 
 /** Panel kiri: daftar percakapan + pencarian kader baru (blueprint 8.5). */
@@ -86,14 +86,14 @@ export function DaftarPercakapan({
             type="search"
             value={cari}
             onChange={(e) => setCari(e.target.value)}
-            placeholder="Ketik nama atau @username…"
+            placeholder="Ketik nama atau @username..."
             className="w-full border-2 border-hitam-900 bg-kertas-100 px-3 py-2 font-sans text-sm text-hitam-900 outline-none placeholder:text-hitam-400 focus:border-gmnimerah-500"
           />
         </label>
         {cari.trim().length >= 2 && (
           <ul className="mt-2 max-h-44 divide-y divide-hitam-100 overflow-y-auto border-2 border-hitam-900">
             {mencari ? (
-              <li className="px-3 py-2 text-sm text-hitam-400">Mencari…</li>
+              <li className="px-3 py-2 text-sm text-hitam-400">Mencari...</li>
             ) : hasil.length === 0 ? (
               <li className="px-3 py-2 text-sm text-hitam-400">
                 Tidak ada kader yang cocok (atau profilnya tersembunyi).

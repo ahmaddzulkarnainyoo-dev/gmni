@@ -219,7 +219,7 @@ export function WidgetDuaFaktor({ aktifAwal }: { aktifAwal: boolean }) {
           {pemulihan.length > 0 && (
             <div className="border-2 border-gmnimerah-500 bg-gmnimerah-50 p-4">
               <p className="font-mono text-[11px] font-bold uppercase tracking-widest text-gmnimerah-700">
-                Kode pemulihan — simpan sekarang (hanya tampil 1x)
+                Kode pemulihan - simpan sekarang (hanya tampil 1x)
               </p>
               <ul className="mt-2 grid grid-cols-1 gap-1 font-mono text-sm font-bold text-hitam-900 sm:grid-cols-2">
                 {pemulihan.map((k) => (

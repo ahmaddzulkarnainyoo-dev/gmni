@@ -13,7 +13,7 @@ function BannerGagal() {
       className="mb-4 border-2 border-gmnimerah-500 bg-gmnimerah-50 px-3 py-2 text-sm font-semibold text-gmnimerah-700"
     >
       Data redaksi belum dapat dimuat (kategori/tag/draf). Coba muat ulang
-      halaman — tulisan Anda aman, form tetap bisa dibuka bila data kembali.
+      halaman - tulisan Anda aman, form tetap bisa dibuka bila data kembali.
     </p>
   );
 }
