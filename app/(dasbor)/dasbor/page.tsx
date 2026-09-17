@@ -10,6 +10,7 @@ import {
   labelPeriodeMingguan,
 } from "@/lib/gamifikasi";
 import { fmtTanggal } from "@/lib/articles";
+import { amanAsync } from "@/lib/kueri-aman";
 
 
 /** Label Indonesia untuk jenis aktivitas ledger (transparansi poin). */
@@ -28,10 +29,27 @@ export const dynamic = "force-dynamic";
 export default async function DasborPage() {
   const user = await requireAuthUser();
   await evaluasiBadgeKader(user.id);
-  const [ringkasan, limaBesar] = await Promise.all([
-    ambilRingkasanKader(user.id),
-    ambilPeringkatMingguan(5),
+
+  // Anti-crash (bukan error boundary "Mesin Cetak Macet"): kegagalan DB -
+  // mis. timeout pooler Supabase - dikembalikan sebagai fallback + banner,
+  // pola sama dengan halaman tulisan-saya (null = gagal, [] = memang kosong).
+  type RingkasanKader = Awaited<ReturnType<typeof ambilRingkasanKader>>;
+  type BarisPeringkat = Awaited<ReturnType<typeof ambilPeringkatMingguan>>;
+  const RINGKASAN_KOSONG: RingkasanKader = {
+    poinMingguIni: 0,
+    peringkat: null,
+    streak: 0,
+    jumlahBadge: 0,
+    rincian: [],
+  };
+  const [ringkasanHasil, limaBesarHasil] = await Promise.all([
+    amanAsync(() => ambilRingkasanKader(user.id), null),
+    amanAsync(() => ambilPeringkatMingguan(5), null),
   ]);
+  const ringkasanGagal = ringkasanHasil === null;
+  const papanGagal = limaBesarHasil === null;
+  const ringkasan: RingkasanKader = ringkasanHasil ?? RINGKASAN_KOSONG;
+  const limaBesar: BarisPeringkat = limaBesarHasil ?? [];
 
   const rincianTeks = ringkasan.rincian.length > 0
     ? ringkasan.rincian.map((r) => `${labelJenis(r.jenis)} x${r.jumlah}`).join(" - ")
@@ -41,7 +59,7 @@ export default async function DasborPage() {
     {
       label: "Poin Minggu Ini",
       nilai: String(ringkasan.poinMingguIni),
-      sub: `Artikel 10 - Komentar 2 - Harian 1 - ${rincianTeks}`,
+      sub: rincianTeks,
     },
     {
       label: "Peringkat",
@@ -64,6 +82,15 @@ export default async function DasborPage() {
 
   return (
     <div>
+      {(ringkasanGagal || papanGagal) && (
+        <p
+          role="alert"
+          className="mb-4 border-2 border-gmnimerah-500 bg-gmnimerah-50 px-3 py-2 text-sm font-semibold text-gmnimerah-700"
+        >
+          Sebagian data ringkasan belum dapat dimuat. Coba muat ulang halaman
+          sebentar lagi.
+        </p>
+      )}
       <WidgetAktivitas />
       <KickerLabel>Dasbor Kader</KickerLabel>
       <h1 className="mt-2 font-serif text-3xl font-extrabold text-hitam-900">
@@ -103,7 +130,12 @@ export default async function DasborPage() {
             Papan Penuh -&gt;
           </Link>
         </div>
-        {limaBesar.length === 0 ? (
+        {papanGagal ? (
+          <p className="px-4 py-6 text-sm text-hitam-500">
+            Papan peringkat belum dapat dimuat. Coba muat ulang halaman
+            sebentar lagi.
+          </p>
+        ) : limaBesar.length === 0 ? (
           <p className="px-4 py-6 text-sm text-hitam-500">
             Belum ada poin tercatat minggu ini. Tulis artikel, berkomentar, atau kirim pesan untuk
             membuka papan peringkat.

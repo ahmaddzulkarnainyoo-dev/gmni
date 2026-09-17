@@ -13,24 +13,34 @@ type PesanItem = {
   pengirim: { id: string; namaLengkap: string; username: string };
 };
 
+type Lawan = {
+  id: string;
+  namaLengkap: string;
+  username: string;
+  fotoProfil: string | null;
+  statusAkun: string;
+};
+
 type RoomItem = {
   id: string;
   pesanTerakhirAt: string | null;
-  lawan: {
-    id: string;
-    namaLengkap: string;
-    username: string;
-    fotoProfil: string | null;
-    statusAkun: string;
-  } | null;
+  lawan: Lawan | null;
   pesanTerakhir: { isi: string; tanggal: string; pengirimId: string } | null;
   belumDibaca: number;
+};
+
+type KaderBaru = {
+  id: string;
+  namaLengkap: string;
+  username: string;
+  fotoProfil?: string | null;
 };
 
 // Polling ringan ala plan 3.1: chat aktif 5 dtk, daftar 15 dtk, hanya saat
 // tab terlihat (hemat kuota serverless).
 const INTERVAL_CHAT_MS = 5000;
 const INTERVAL_DAFTAR_MS = 15000;
+const AWALAN_TEMP = "baru:";
 
 function gabungPesan(lama: PesanItem[], tambahan: PesanItem[]): PesanItem[] {
   const ganti = new Map<string, PesanItem>();
@@ -53,6 +63,26 @@ function gabungPesan(lama: PesanItem[], tambahan: PesanItem[]): PesanItem[] {
     .slice(-200);
 }
 
+/**
+ * Gabungkan daftar room server dengan room sementara "baru:" milik klien.
+ * Temp room dipertahankan selama room aslinya belum terlihat dari server,
+ * dan dibuang begitu room asli muncul; mapping tempKeAsli dipakai pemanggil
+ * untuk memindahkan seleksi aktif ke room asli.
+ */
+function gabungRoom(
+  lama: RoomItem[],
+  server: RoomItem[],
+): { hasil: RoomItem[]; tempKeAsli: Map<string, string> } {
+  const tempKeAsli = new Map<string, string>();
+  const sisa: RoomItem[] = [];
+  for (const t of lama) {
+    if (!t.id.startsWith(AWALAN_TEMP)) continue;
+    const asli = server.find((r) => r.lawan?.id === t.id.slice(AWALAN_TEMP.length));
+    if (asli) tempKeAsli.set(t.id, asli.id);
+    else sisa.push(t);
+  }
+  return { hasil: [...sisa, ...server], tempKeAsli };
+}
 
 /** Orkestrasi ruang obrolan: daftar + chat + polling (opsi A plan 3.1). */
 export function RuangObrolan({
@@ -68,24 +98,22 @@ export function RuangObrolan({
   const [aktifId, setAktifId] = useState<string | null>(awal[0]?.id ?? null);
   const [pesan, setPesan] = useState<PesanItem[]>([]);
   const [memuatChat, setMemuatChat] = useState(false);
+  const [erorRiwayat, setErorRiwayat] = useState<string | null>(null);
   const cursorRef = useRef<string | null>(null);
   const aktifRef = useRef<string | null>(null);
-  aktifRef.current = aktifId;
-
-  const muatDaftar = useCallback(async () => {
-    try {
-      const res = await fetch("/api/pesan/percakapan");
-      if (!res.ok) return;
-      const data = (await res.json()) as { percakapan?: RoomItem[] };
-      if (data.percakapan) setRoom(data.percakapan);
-    } catch {
-      /* abaikan - polling berikutnya mencoba lagi */
-    }
-  }, []);
+  const roomRef = useRef<RoomItem[]>(awal);
+  // Sinkronisasi ref via effect (bukan saat render) sesuai aturan react-hooks/refs.
+  useEffect(() => {
+    aktifRef.current = aktifId;
+  }, [aktifId]);
+  useEffect(() => {
+    roomRef.current = room;
+  }, [room]);
 
   const muatRiwayat = useCallback(async (id: string, polling = false) => {
     if (!polling) {
       setMemuatChat(true);
+      setErorRiwayat(null);
       cursorRef.current = null;
     }
     try {
@@ -94,7 +122,14 @@ export function RuangObrolan({
           ? `/api/pesan/${id}?setelah=${encodeURIComponent(cursorRef.current)}`
           : `/api/pesan/${id}`;
       const res = await fetch(url);
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Jangan telan kegagalan sebagai "Belum ada pesan" - tampilkan banner.
+        if (!polling) {
+          setPesan([]);
+          setErorRiwayat("Riwayat percakapan gagal dimuat. Coba lagi sebentar.");
+        }
+        return;
+      }
       const data = (await res.json()) as { pesan?: PesanItem[] };
       const daftar = data.pesan ?? [];
       if (aktifRef.current !== id) return;
@@ -103,22 +138,47 @@ export function RuangObrolan({
       if (terakhir) cursorRef.current = terakhir.tanggal;
       else if (!polling) setPesan([]);
     } catch {
-      /* abaikan */
+      if (!polling) {
+        setErorRiwayat("Tidak dapat menghubungi server untuk memuat riwayat.");
+      }
     } finally {
       if (!polling) setMemuatChat(false);
     }
   }, []);
 
+  const muatDaftar = useCallback(async () => {
+    try {
+      const res = await fetch("/api/pesan/percakapan");
+      if (!res.ok) return;
+      const data = (await res.json()) as { percakapan?: RoomItem[] };
+      if (!data.percakapan) return;
+      // Merge, bukan replace penuh: room sementara "baru:" jangan sampai
+      // hilang digulung polling 15 detik (penyebab panel kanan kosong).
+      const { hasil, tempKeAsli } = gabungRoom(roomRef.current, data.percakapan);
+      roomRef.current = hasil;
+      setRoom(hasil);
+      const aktif = aktifRef.current;
+      const idAsli = aktif ? tempKeAsli.get(aktif) : undefined;
+      if (idAsli) {
+        setAktifId(idAsli);
+        void muatRiwayat(idAsli);
+      }
+    } catch {
+      /* abaikan - polling berikutnya mencoba lagi */
+    }
+  }, [muatRiwayat]);
+
   useEffect(() => {
-    if (aktifId && !aktifId.startsWith("baru:")) muatRiwayat(aktifId);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pola orkestrasi polling: muat riwayat saat room berganti
+    if (aktifId && !aktifId.startsWith(AWALAN_TEMP)) void muatRiwayat(aktifId);
     else if (!aktifId) setPesan([]);
   }, [aktifId, muatRiwayat]);
 
   useEffect(() => {
     const t = setInterval(() => {
       if (document.hidden || !aktifRef.current) return;
-      if (aktifRef.current.startsWith("baru:")) return;
-      muatRiwayat(aktifRef.current, true);
+      if (aktifRef.current.startsWith(AWALAN_TEMP)) return;
+      void muatRiwayat(aktifRef.current, true);
     }, INTERVAL_CHAT_MS);
     return () => clearInterval(t);
   }, [muatRiwayat]);
@@ -139,52 +199,114 @@ export function RuangObrolan({
     }
   }
 
-  // Deep-link ?dengan=<username> dari tombol "Kirim Pesan" profil.
-  useEffect(() => {
-    if (!denganUsername) return;
-    const target = denganUsername.trim().toLowerCase();
-    if (!target) return;
-    const cocok = room.find((r) => r.lawan?.username.toLowerCase() === target);
-    if (cocok) {
-      setAktifId(cocok.id);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [denganUsername]);
-
-  function handleMulaiBaru(kader: { id: string; username: string }) {
-    const cocok = room.find((r) => r.lawan?.id === kader.id);
-    if (cocok) {
-      setAktifId(cocok.id);
-      return;
-    }
-    const tempId = `baru:${kader.id}`;
-    setRoom((lama) => [
-      {
+  // Pilih kader dari pencarian: pakai room asli bila sudah ada (di state
+  // maupun di DB), baru buat room sementara bila benar-benar belum obrolan.
+  const handleMulaiBaru = useCallback(
+    async (kader: KaderBaru) => {
+      setErorRiwayat(null);
+      const lokal = roomRef.current.find((r) => r.lawan?.id === kader.id);
+      if (lokal) {
+        setAktifId(lokal.id);
+        void muatRiwayat(lokal.id);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/pesan/percakapan?dengan=${encodeURIComponent(kader.id)}`,
+        );
+        if (res.ok) {
+          const data = (await res.json()) as { percakapanId?: string | null };
+          if (data.percakapanId) {
+            await muatDaftar();
+            const asli = roomRef.current.find((r) => r.lawan?.id === kader.id);
+            const idRoom = asli?.id ?? data.percakapanId;
+            setAktifId(idRoom);
+            void muatRiwayat(idRoom);
+            return;
+          }
+        }
+      } catch {
+        /* gagal jaringan: lanjut buat room sementara */
+      }
+      const tempId = `${AWALAN_TEMP}${kader.id}`;
+      const temp: RoomItem = {
         id: tempId,
         pesanTerakhirAt: null,
         lawan: {
           id: kader.id,
-          namaLengkap: "",
+          namaLengkap: kader.namaLengkap,
           username: kader.username,
-          fotoProfil: null,
+          fotoProfil: kader.fotoProfil ?? null,
           statusAkun: "AKTIF",
         },
         pesanTerakhir: null,
         belumDibaca: 0,
-      },
-      ...lama,
-    ]);
-    setAktifId(tempId);
-  }
+      };
+      roomRef.current = [temp, ...roomRef.current.filter((r) => r.id !== tempId)];
+      setRoom(roomRef.current);
+      setAktifId(tempId);
+    },
+    [muatDaftar, muatRiwayat],
+  );
+
+  // Deep-link ?dengan=<username> dari tombol "Kirim Pesan" profil:
+  // buka room asli bila ada, atau buat room sementara (jangan diam).
+  useEffect(() => {
+    if (!denganUsername) return;
+    const target = denganUsername.trim().toLowerCase();
+    if (!target) return;
+    void (async () => {
+      const sudah = roomRef.current.find(
+        (r) => r.lawan?.username.toLowerCase() === target,
+      );
+      if (sudah) {
+        setAktifId(sudah.id);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/pesan/percakapan?dengan=${encodeURIComponent(target)}`,
+        );
+        if (res.ok) {
+          const data = (await res.json()) as {
+            percakapanId?: string | null;
+            lawan?: Lawan | null;
+          };
+          if (data.percakapanId) {
+            await muatDaftar();
+            const cocok =
+              roomRef.current.find(
+                (r) => r.lawan?.username.toLowerCase() === target,
+              ) ?? roomRef.current.find((r) => r.id === data.percakapanId);
+            if (cocok) {
+              setAktifId(cocok.id);
+              return;
+            }
+          }
+          if (data.lawan) {
+            void handleMulaiBaru({
+              id: data.lawan.id,
+              namaLengkap: data.lawan.namaLengkap,
+              username: data.lawan.username,
+              fotoProfil: data.lawan.fotoProfil,
+            });
+            return;
+          }
+        }
+      } catch {
+        /* diam - pengguna masih bisa memakai pencarian manual */
+      }
+    })();
+  }, [denganUsername, handleMulaiBaru, muatDaftar]);
 
   const lawanAktif = room.find((r) => r.id === aktifId)?.lawan ?? null;
-  const aktifBaru = aktifId?.startsWith("baru:") === true;
+  const aktifBaru = aktifId?.startsWith(AWALAN_TEMP) === true;
 
   return (
     <div className="flex flex-col gap-4 md:flex-row">
       <DaftarPercakapan
-        room={room.filter((r) => !r.id.startsWith("baru:"))}
-        aktifId={aktifBaru ? null : aktifId}
+        room={room}
+        aktifId={aktifId}
         userId={userId}
         onPilih={setAktifId}
         onMulaiBaru={handleMulaiBaru}
@@ -194,7 +316,7 @@ export function RuangObrolan({
         {aktifBaru ? (
           <MulaiPercakapanBaru
             aktifId={aktifId as string}
-            room={room}
+            lawan={lawanAktif}
             userId={userId}
             onSiap={(idBaru) => {
               setAktifId(idBaru);
@@ -210,6 +332,7 @@ export function RuangObrolan({
             pesan={pesan}
             userId={userId}
             memuat={memuatChat}
+            eror={erorRiwayat}
             onTerkirim={handleTerkirim}
             onKembali={() => setAktifId(null)}
           />
@@ -221,23 +344,22 @@ export function RuangObrolan({
 
 function MulaiPercakapanBaru({
   aktifId,
-  room,
+  lawan,
   userId,
   onSiap,
   onKembali,
 }: {
   aktifId: string;
-  room: RoomItem[];
+  lawan: Lawan | null;
   userId: string;
   onSiap: (idBaru: string) => void;
   onKembali: () => void;
 }) {
-  const entri = room.find((r) => r.id === aktifId);
   const [pesanLokal, setPesanLokal] = useState<PesanItem[]>([]);
   const [eror, setEror] = useState<string | null>(null);
 
   async function kirimPertama(isi: string) {
-    const penerimaId = aktifId.replace("baru:", "");
+    const penerimaId = aktifId.replace(AWALAN_TEMP, "");
     setEror(null);
     try {
       const res = await fetch("/api/pesan", {
@@ -272,7 +394,7 @@ function MulaiPercakapanBaru({
       )}
       <JendelaChat
         percakapanId="baru"
-        lawan={entri?.lawan ?? null}
+        lawan={lawan}
         pesan={pesanLokal}
         userId={userId}
         memuat={false}

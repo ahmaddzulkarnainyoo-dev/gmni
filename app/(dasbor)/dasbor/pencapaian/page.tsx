@@ -3,6 +3,7 @@ import { requireAuthUser } from "@/lib/session";
 import { LABEL_BADGE, evaluasiBadgeKader } from "@/lib/gamifikasi";
 import { prisma } from "@/lib/prisma";
 import { fmtTanggal } from "@/lib/articles";
+import { amanAsync } from "@/lib/kueri-aman";
 
 export const dynamic = "force-dynamic";
 
@@ -13,10 +14,15 @@ export const dynamic = "force-dynamic";
 export default async function HalamanPencapaian() {
   const user = await requireAuthUser();
   await evaluasiBadgeKader(user.id);
-  const badge = await prisma.pencapaian.findMany({
-    where: { userId: user.id },
-    orderBy: { tanggalDiperoleh: "desc" },
-  });
+  const badge =
+    (await amanAsync(
+      () =>
+        prisma.pencapaian.findMany({
+          where: { userId: user.id },
+          orderBy: { tanggalDiperoleh: "desc" },
+        }),
+      [],
+    )) ?? [];
 
   return (
     <div>

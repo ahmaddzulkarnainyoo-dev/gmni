@@ -40,6 +40,7 @@ export function JendelaChat({
   pesan,
   userId,
   memuat,
+  eror,
   onTerkirim,
   onKembali,
 }: {
@@ -48,6 +49,8 @@ export function JendelaChat({
   pesan: PesanItem[];
   userId: string;
   memuat: boolean;
+  /** Pesan kegagalan memuat riwayat (null/undefined = tidak ada error). */
+  eror?: string | null;
   onTerkirim: (p: PesanItem) => void;
   onKembali: () => void;
 }) {
@@ -109,7 +112,14 @@ export function JendelaChat({
       </header>
 
       <div className="flex max-h-[52vh] min-h-[280px] flex-1 flex-col gap-2 overflow-y-auto bg-kertas-100 p-4">
-        {memuat ? (
+        {eror ? (
+          <p
+            role="alert"
+            className="border-2 border-gmnimerah-500 bg-gmnimerah-50 px-3 py-2 text-sm font-semibold text-gmnimerah-700"
+          >
+            {eror}
+          </p>
+        ) : memuat ? (
           <p className="py-8 text-center text-sm text-hitam-400">
             Memuat riwayat...
           </p>
@@ -155,7 +165,9 @@ export function JendelaChat({
         <div ref={bawahRef} />
       </div>
 
+      {/* key=percakapanId: reset isi/eror via remount saat ganti room. */}
       <FormKirimPesan
+        key={percakapanId ?? "tanpa-room"}
         percakapanId={percakapanId}
         userId={userId}
         onTerkirim={onTerkirim}

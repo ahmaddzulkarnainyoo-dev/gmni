@@ -51,8 +51,9 @@ export function DaftarPercakapan({
   useEffect(() => {
     const q = cari.trim();
     if (q.length < 2) {
-      setHasil([]);
-      return;
+      // Debounce juga untuk reset, hindari setState sinkron di body effect.
+      const t = setTimeout(() => setHasil([]), 0);
+      return () => clearTimeout(t);
     }
     const t = setTimeout(async () => {
       setMencari(true);

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSessionUser } from "@/lib/session";
+import { apakahStaf, cariPercakapanSatuLawanSatu } from "@/lib/dm";
 
 /** GET /api/pesan/percakapan — daftar room aktif milikku (blueprint 8.5). */
-export async function GET() {
+export async function GET(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json(
@@ -16,6 +17,42 @@ export async function GET() {
       { error: "Akun Anda tidak memiliki izin berkirim pesan." },
       { status: 403 },
     );
+  }
+
+  // Cabang ringan: resolusi percakapan 1-on-1 dengan satu kader (berdasarkan
+  // id atau @username). Dipakai klien sebelum membuat room sementara agar
+  // riwayat lama langsung tampil, bukan "Belum ada pesan".
+  const { searchParams } = new URL(request.url);
+  const dengan = searchParams.get("dengan")?.trim();
+  if (dengan) {
+    const staf = apakahStaf(user);
+    const target = await prisma.user.findFirst({
+      where: {
+        OR: [{ id: dengan }, { username: { equals: dengan, mode: "insensitive" } }],
+      },
+      select: {
+        id: true,
+        namaLengkap: true,
+        username: true,
+        fotoProfil: true,
+        statusAkun: true,
+        profilTersembunyi: true,
+      },
+    });
+    if (!target || target.statusAkun !== "AKTIF" || (!staf && target.profilTersembunyi)) {
+      return NextResponse.json({ percakapanId: null, lawan: null });
+    }
+    const percakapanId = await cariPercakapanSatuLawanSatu(user.id, target.id);
+    return NextResponse.json({
+      percakapanId,
+      lawan: {
+        id: target.id,
+        namaLengkap: target.namaLengkap,
+        username: target.username,
+        fotoProfil: target.fotoProfil,
+        statusAkun: target.statusAkun,
+      },
+    });
   }
 
   const keanggotaan = await prisma.anggotaPercakapan.findMany({

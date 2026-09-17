@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { BATAS_ISI_PESAN } from "@/lib/dm";
 
 type PengirimRingkas = { id: string; namaLengkap: string; username: string };
@@ -29,11 +29,6 @@ export function FormKirimPesan({
   const [memuat, setMemuat] = useState(false);
   const [eror, setEror] = useState<string | null>(null);
   const optimisId = useRef(0);
-
-  useEffect(() => {
-    setIsi("");
-    setEror(null);
-  }, [percakapanId]);
 
   async function kirim() {
     const teks = isi.trim();
