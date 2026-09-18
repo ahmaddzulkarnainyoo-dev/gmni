@@ -75,6 +75,7 @@ export default async function HalamanIklanDonasi() {
           }))}
           totalMenunggu={hitung("MENUNGGU_VERIFIKASI")}
           totalTerverifikasi={hitung("TERVERIFIKASI")}
+          totalDitolak={hitung("DITOLAK")}
           nominalTerverifikasi={nominalTerverifikasi}
         />
       </section>

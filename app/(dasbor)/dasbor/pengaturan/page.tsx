@@ -3,6 +3,7 @@ import { requirePermission } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import { TogglePrivasi } from "@/components/dasbor/TogglePrivasi";
 import { WidgetDuaFaktor } from "@/components/dasbor/WidgetDuaFaktor";
+import { WidgetFotoProfil } from "@/components/dasbor/WidgetFotoProfil";
 
 export const metadata: Metadata = { title: "Pengaturan" };
 export const dynamic = "force-dynamic";
@@ -16,6 +17,7 @@ export default async function HalamanPengaturan() {
       namaLengkap: true,
       username: true,
       email: true,
+      fotoProfil: true,
       profilTersembunyi: true,
       is2FAEnabled: true,
     },
@@ -52,6 +54,8 @@ export default async function HalamanPengaturan() {
           </div>
         </dl>
       </div>
+
+      <WidgetFotoProfil urlAwal={pengguna.fotoProfil} namaLengkap={pengguna.namaLengkap} />
 
       <TogglePrivasi aktif={pengguna.profilTersembunyi} />
 

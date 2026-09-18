@@ -147,6 +147,8 @@ model User {
   iklanDibuat       Iklan[] @relation("IklanDibuatOleh")
   donasiDiverifikasi Donasi[] @relation("DonasiDiverifikasiOleh")
   undanganDibuat    TokenUndangan[] @relation("UndanganDibuatOleh")
+  tokenPemulihan    TokenPemulihan[]
+  pemulihanDibuat   TokenPemulihan[] @relation("PemulihanDibuatOleh")
 
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -531,4 +533,27 @@ model TokenUndangan {
 
   @@index([dipakaiAt])
   @@index([dibuatOlehId])
+}
+
+// ============================================================
+// 7.12 TOKEN PEMULIHAN SANDI (Fase 4.3) — lupa sandi sekali pakai.
+//  Alur: minta di /lupa-password (atau link admin di /admin/pengguna)
+//  → token 32-hex exp 30 mnt (admin: 24 jam) → /pulihkan-sandi?token=
+//  → consume sekali pakai + audit. Email via Resend REST bila RESEND_API_KEY
+//  dikonfigurasi; tanpa key → link hanya tampil ke admin / log server.
+// ============================================================
+
+model TokenPemulihan {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String    @unique /// 64 karakter hex (randomBytes 32)
+  dipakaiAt     DateTime? /// sekali pakai
+  kedaluwarsaAt DateTime
+  dibuatOlehId  String?   /// di-set bila dibuat manual oleh admin (pintu darurat)
+  dibuatOleh    User?     @relation("PemulihanDibuatOleh", fields: [dibuatOlehId], references: [id], onDelete: SetNull)
+  createdAt     DateTime  @default(now())
+
+  @@index([userId])
+  @@index([kedaluwarsaAt])
 }

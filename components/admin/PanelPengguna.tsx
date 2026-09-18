@@ -33,6 +33,9 @@ export function PanelPengguna({
 }) {
   const [memuat, setMemuat] = useState<Record<string, string>>({});
   const [eror, setEror] = useState<Record<string, string>>({});
+  const [tautanPemulihan, setTautanPemulihan] = useState<
+    Record<string, string | null>
+  >({});
 
   async function gantiPeran(u: PenggunaData, roleId: string) {
     const roleBaru = roles.find((r) => r.id === roleId);
@@ -112,6 +115,46 @@ export function PanelPengguna({
     }
   }
 
+  /** Pintu darurat lupa sandi tanpa email: buat tautan sekali-pakai 24 jam. */
+  async function buatTautanPemulihan(u: PenggunaData) {
+    if (
+      !window.confirm(
+        `Buat tautan pemulihan sandi untuk ${u.namaLengkap} (@${u.username})? Tautan berlaku 24 jam dan hanya bisa dipakai sekali. Bagikan langsung ke kader.`,
+      )
+    ) {
+      return;
+    }
+    setMemuat((m) => ({ ...m, [u.id]: "pemulihan" }));
+    setEror((e) => ({ ...e, [u.id]: "" }));
+    setTautanPemulihan((t) => ({ ...t, [u.id]: null }));
+    try {
+      const res = await fetch(`/api/admin/pengguna/${u.id}/reset-sandi`, {
+        method: "POST",
+      });
+      const data = (await res.json()) as { error?: string; tautan?: string };
+      if (!res.ok || !data.tautan) {
+        setEror((e) => ({
+          ...e,
+          [u.id]: data.error ?? "Gagal membuat tautan pemulihan.",
+        }));
+        return;
+      }
+      setTautanPemulihan((t) => ({ ...t, [u.id]: data.tautan ?? null }));
+    } catch {
+      setEror((e) => ({ ...e, [u.id]: "Tidak dapat menghubungi server." }));
+    } finally {
+      setMemuat((m) => ({ ...m, [u.id]: "" }));
+    }
+  }
+
+  async function salinTautan(tautan: string) {
+    try {
+      await navigator.clipboard.writeText(tautan);
+    } catch {
+      // Clipboard ditolak browser — admin masih bisa menyalin manual dari input.
+    }
+  }
+
   if (pengguna.length === 0) {
     return (
       <div className="mt-6 border-4 border-dashed border-hitam-200 bg-kertas-100 p-10 text-center">
@@ -182,27 +225,44 @@ export function PanelPengguna({
                   {eror[u.id]}
                 </p>
               )}
+              {tautanPemulihan[u.id] && (
+                <div className="mt-2 border-2 border-hitam-900 bg-kertas-100 p-2">
+                  <p className="font-mono text-[10px] font-bold uppercase tracking-widest text-hitam-600">
+                    Tautan pemulihan (24 jam, sekali pakai):
+                  </p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={tautanPemulihan[u.id] ?? ""}
+                      onFocus={(e) => e.currentTarget.select()}
+                      className="min-w-0 flex-1 border border-hitam-200 bg-white px-2 py-1 font-mono text-[11px] text-hitam-900"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => salinTautan(tautanPemulihan[u.id] ?? "")}
+                      className="border border-hitam-900 bg-hitam-900 px-2 py-1 font-mono text-[10px] font-bold uppercase tracking-widest text-white hover:bg-gmnimerah-600"
+                    >
+                      Salin
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               {bisaSuspend && (
                 <button
                   type="button"
-                  disabled={memuat[u.id] === "suspend"}
-                  onClick={() => gantiStatus(u)}
-                  className={`border-2 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest transition-colors disabled:opacity-50 ${
-                    u.statusAkun === "AKTIF"
-                      ? "border-gmnimerah-700 text-gmnimerah-700 hover:bg-gmnimerah-700 hover:text-white"
-                      : "border-hitam-900 text-hitam-900 hover:bg-hitam-900 hover:text-white"
-                  }`}
+                  disabled={memuat[u.id] !== ""}
+                  onClick={() => buatTautanPemulihan(u)}
+                  className="border-2 border-hitam-900 px-3 py-1.5 font-mono text-[11px] font-bold uppercase tracking-widest text-hitam-900 transition-colors hover:bg-hitam-900 hover:text-white disabled:opacity-50"
                 >
-                  {memuat[u.id] === "suspend"
-                    ? "Memproses..."
-                    : u.statusAkun === "AKTIF"
-                      ? "Tangguhkan"
-                      : "Aktifkan"}
+                  {memuat[u.id] === "pemulihan"
+                    ? "Membuat..."
+                    : "Reset Sandi"}
                 </button>
               )}
-              {bisaHapus && (
+              {bisaSuspend && (
                 <button
                   type="button"
                   disabled={memuat[u.id] !== ""}

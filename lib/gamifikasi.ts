@@ -5,6 +5,7 @@
  * Filter anonimitas mutlak: hanya artikel ASLI + tidak dikecualikan.
  */
 import { prisma } from "@/lib/prisma";
+import { Prisma } from "@prisma/client";
 import type { JenisAktivitas } from "@prisma/client";
 
 /**
@@ -97,6 +98,52 @@ export async function tarikPoinEntitas(detail: string): Promise<void> {
     // Best-effort.
   }
 }
+
+/**
+ * Triase error Prisma: P2021 (tabel belum ada) / P2022 (kolom belum ada).
+ * Terjadi bila DB environment belum di-sync — JANGAN dibungkus banner palsu;
+ * cukup log jelas + fallback data kosong (data memang nol, bukan error DB).
+ */
+function skemaHilang(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    (error.code === "P2021" || error.code === "P2022")
+  );
+}
+
+function logSkemaHilang(label: string): void {
+  console.error(
+    `[gamifikasi] Tabel/kolom gamifikasi belum ada di DB (${label}) — jalankan "npx prisma db push" di environment produksi.`,
+  );
+}
+
+/** Penghitung bagian query untuk deteksi "semua gagal". */
+type CatatanKueri = { gagal: number; total: number; skemaHilang: boolean };
+
+/**
+ * Jalankan satu bagian query dengan fallback; catat kegagalan ke `catatan`.
+ * Kegagalan satu bagian TIDAK merusak bagian lain (anti-banner-palsu).
+ */
+async function amanBagian<T>(
+  label: string,
+  fn: () => Promise<T>,
+  fallback: T,
+  catatan: CatatanKueri,
+): Promise<T> {
+  catatan.total += 1;
+  try {
+    return await fn();
+  } catch (error) {
+    catatan.gagal += 1;
+    if (skemaHilang(error)) {
+      catatan.skemaHilang = true;
+      logSkemaHilang(label);
+    } else {
+      console.error(`[gamifikasi] Bagian ${label} gagal:`, error);
+    }
+    return fallback;
+  }
+}
 /** Beri badge idempoten (upsert - duplikat diabaikan). */
 export async function beriBadge(
   userId: string,
@@ -187,8 +234,28 @@ export type BarisPeringkat = {
   roleNama?: string;
 };
 
-/** Agregasi leaderboard minggu berjalan dari ledger KegiatanKader. */
+/**
+ * Agregasi leaderboard minggu berjalan dari ledger KegiatanKader.
+ * Anti-banner-palsu: error skema (P2021/P2022 — tabel gamifikasi belum
+ * di-push di environment tersebut) → papan kosong + log jelas; error DB
+ * lain (koneksi/timeout) → dilempar ke amanAsync (banner sah di dasbor).
+ */
 export async function ambilPeringkatMingguan(
+  batas = 50,
+  opsi?: { sertakanTersembunyi?: boolean; sertakanAdmin?: boolean },
+): Promise<BarisPeringkat[]> {
+  try {
+    return await kumpulkanPeringkatMingguan(batas, opsi);
+  } catch (error) {
+    if (skemaHilang(error)) {
+      logSkemaHilang("leaderboard");
+      return [];
+    }
+    throw error;
+  }
+}
+
+async function kumpulkanPeringkatMingguan(
   batas = 50,
   opsi?: { sertakanTersembunyi?: boolean; sertakanAdmin?: boolean },
 ): Promise<BarisPeringkat[]> {
@@ -277,27 +344,69 @@ export async function ambilRingkasanKader(userId: string): Promise<{
   jumlahBadge: number;
   /** Rincian per jenis aktivitas minggu ini (untuk transparansi widget). */
   rincian: Array<{ jenis: string; jumlah: number; poin: number }>;
+  /** true bila SEMUA bagian query gagal (DB down) → banner dasbor sah. */
+  gagalTotal: boolean;
+  /** true bila ada bagian gagal karena tabel/kolom belum dibuat (P2021/P2022). */
+  tabelGamifikasiHilang: boolean;
 }> {
   const awal = awalMingguBerjalan();
   const akhir = akhirMingguBerjalan();
+  const catatan: CatatanKueri = { gagal: 0, total: 0, skemaHilang: false };
+
+  // Granular: tiap query dijaga sendiri-sendiri — satu bagian gagal (mis.
+  // tabel gamifikasi belum di-push) TIDAK merusak bagian lain maupun
+  // memunculkan banner palsu "Sebagian data ringkasan belum dapat dimuat".
   const [agregat, perJenis, streak, jumlahBadge, pemilik] = await Promise.all([
-    prisma.kegiatanKader.aggregate({
-      where: { userId, tanggal: { gte: awal, lt: akhir } },
-      _sum: { poin: true },
-    }),
-    prisma.kegiatanKader.groupBy({
-      by: ["jenis"],
-      where: { userId, tanggal: { gte: awal, lt: akhir } },
-      _count: { _all: true },
-      _sum: { poin: true },
-    }),
-    prisma.streakKader.findUnique({ where: { userId } }),
-    prisma.pencapaian.count({ where: { userId } }),
-    prisma.user.findUnique({
-      where: { id: userId },
-      select: { statusAkun: true, profilTersembunyi: true, role: { select: { nama: true } } },
-    }),
+    amanBagian(
+      "agregat-poin",
+      () =>
+        prisma.kegiatanKader.aggregate({
+          where: { userId, tanggal: { gte: awal, lt: akhir } },
+          _sum: { poin: true },
+        }),
+      { _sum: { poin: null } },
+      catatan,
+    ),
+    amanBagian(
+      "rincian-jenis",
+      () =>
+        prisma.kegiatanKader.groupBy({
+          by: ["jenis"],
+          where: { userId, tanggal: { gte: awal, lt: akhir } },
+          _count: { _all: true },
+          _sum: { poin: true },
+        }),
+      [] as Array<{
+        jenis: JenisAktivitas;
+        _count: { _all: number };
+        _sum: { poin: number | null };
+      }>,
+      catatan,
+    ),
+    amanBagian(
+      "streak",
+      () => prisma.streakKader.findUnique({ where: { userId } }),
+      null,
+      catatan,
+    ),
+    amanBagian(
+      "badge",
+      () => prisma.pencapaian.count({ where: { userId } }),
+      0,
+      catatan,
+    ),
+    amanBagian(
+      "pemilik-akun",
+      () =>
+        prisma.user.findUnique({
+          where: { id: userId },
+          select: { statusAkun: true, profilTersembunyi: true, role: { select: { nama: true } } },
+        }),
+      null,
+      catatan,
+    ),
   ]);
+
   const poinMingguIni = agregat._sum.poin ?? 0;
   const rincian = perJenis.map((r) => ({ jenis: r.jenis, jumlah: r._count._all, poin: r._sum.poin ?? 0 }));
   // Peringkat hanya bermakna bila akun ikut papan kader (AKTIF, profil tampil,
@@ -309,27 +418,43 @@ export async function ambilRingkasanKader(userId: string): Promise<{
     !PERAN_ADMIN.includes(pemilik.role.nama);
   let peringkat: number | null = null;
   if (poinMingguIni > 0 && ikutPapan) {
-    const diAtas = await prisma.kegiatanKader.groupBy({
-      by: ["userId"],
-      where: { tanggal: { gte: awal, lt: akhir } },
-      _sum: { poin: true },
-      having: { poin: { _sum: { gt: poinMingguIni } } },
-    });
-    const kandidat = diAtas.map((d) => d.userId);
-    const jumlahDiAtas =
-      kandidat.length > 0
-        ? await prisma.user.count({
-            where: {
-              id: { in: kandidat },
-              statusAkun: "AKTIF",
-              profilTersembunyi: false,
-              role: { nama: { notIn: [...PERAN_ADMIN] } },
-            },
-          })
-        : 0;
-    peringkat = jumlahDiAtas + 1;
+    peringkat = await amanBagian(
+      "peringkat",
+      async () => {
+        const diAtas = await prisma.kegiatanKader.groupBy({
+          by: ["userId"],
+          where: { tanggal: { gte: awal, lt: akhir } },
+          _sum: { poin: true },
+          having: { poin: { _sum: { gt: poinMingguIni } } },
+        });
+        const kandidat = diAtas.map((d) => d.userId);
+        if (kandidat.length === 0) return 1;
+        const jumlahDiAtas = await prisma.user.count({
+          where: {
+            id: { in: kandidat },
+            statusAkun: "AKTIF",
+            profilTersembunyi: false,
+            role: { nama: { notIn: [...PERAN_ADMIN] } },
+          },
+        });
+        return jumlahDiAtas + 1;
+      },
+      null,
+      catatan,
+    );
   }
-  return { poinMingguIni, peringkat, streak: streak?.jumlahHariBeruntun ?? 0, jumlahBadge, rincian };
+
+  // Banner dasbor HANYA bila semua bagian gagal (DB benar-benar tak terjangkau).
+  const gagalTotal = catatan.total > 0 && catatan.gagal === catatan.total;
+  return {
+    poinMingguIni,
+    peringkat,
+    streak: streak?.jumlahHariBeruntun ?? 0,
+    jumlahBadge,
+    rincian,
+    gagalTotal,
+    tabelGamifikasiHilang: catatan.skemaHilang,
+  };
 }
 
 /** Snapshot top-N minggu berjalan + badge TOP_3_MINGGU (lazily). */

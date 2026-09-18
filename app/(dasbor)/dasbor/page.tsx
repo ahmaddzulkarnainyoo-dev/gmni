@@ -41,12 +41,18 @@ export default async function DasborPage() {
     streak: 0,
     jumlahBadge: 0,
     rincian: [],
+    gagalTotal: false,
+    tabelGamifikasiHilang: false,
   };
   const [ringkasanHasil, limaBesarHasil] = await Promise.all([
     amanAsync(() => ambilRingkasanKader(user.id), null),
     amanAsync(() => ambilPeringkatMingguan(5), null),
   ]);
-  const ringkasanGagal = ringkasanHasil === null;
+  // Banner HANYA bila DB benar-benar tak terjangkau: hasil null (query
+  // melempar error non-skema) atau flag gagalTotal (semua bagian gagal).
+  // Data nol / tabel gamifikasi belum di-push → tampil 0, tanpa banner palsu.
+  const ringkasanGagal =
+    ringkasanHasil === null || ringkasanHasil.gagalTotal;
   const papanGagal = limaBesarHasil === null;
   const ringkasan: RingkasanKader = ringkasanHasil ?? RINGKASAN_KOSONG;
   const limaBesar: BarisPeringkat = limaBesarHasil ?? [];

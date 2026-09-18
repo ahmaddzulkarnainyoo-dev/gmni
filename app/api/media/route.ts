@@ -3,19 +3,37 @@ import { getSessionUser } from "@/lib/session";
 
 const ROLES_ADMIN = ["Super Admin", "Editor"];
 const TIPE_DITERIMA = new Set(["image/png", "image/jpeg", "image/webp", "image/gif"]);
-const MAKS_BYTE = 5 * 1024 * 1024;
+const MAKS_BYTE_ARTIKEL = 5 * 1024 * 1024;
+/** Foto profil lebih kecil (avatar): maks 2 MB. */
+const MAKS_BYTE_PROFIL = 2 * 1024 * 1024;
 
 /**
- * POST /api/media — unggah gambar unggulan ke Supabase Storage.
- * Disusun tanpa dependensi eksternal (REST API storage). Jika bucket/policy
- * belum siap, gunakan fallback URL gambar manual di form.
+ * POST /api/media — unggah gambar ke Supabase Storage.
+ * - Admin/Editor: gambar unggulan artikel (default, maks 5 MB, prefix artikel/).
+ * - Kader ber-permission "profil.edit_sendiri": foto profil (jenis=profil,
+ *   maks 2 MB, prefix profil/). Disusun tanpa dependensi eksternal (REST
+ *   API storage). Jika bucket/policy belum siap, gunakan fallback URL manual.
  */
 export async function POST(request: Request) {
   const user = await getSessionUser();
   if (!user) {
     return NextResponse.json({ error: "Harus masuk terlebih dahulu." }, { status: 401 });
   }
-  if (!user.roleNama || !ROLES_ADMIN.includes(user.roleNama)) {
+
+  let jenis = "artikel";
+  try {
+    const pratinjau = await request.clone().formData();
+    const v = pratinjau.get("jenis");
+    if (typeof v === "string" && v.length > 0) jenis = v;
+  } catch {
+    // Tanpa field jenis → default artikel (perilaku lama).
+  }
+
+  const isAdmin = !!user.roleNama && ROLES_ADMIN.includes(user.roleNama);
+  const bolehUnggah =
+    isAdmin ||
+    (jenis === "profil" && user.permissions.includes("profil.edit_sendiri"));
+  if (!bolehUnggah) {
     return NextResponse.json(
       { error: "Hanya Super Admin atau Editor yang dapat mengunggah media." },
       { status: 403 },
@@ -43,8 +61,17 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-    if (file.size > MAKS_BYTE) {
-      return NextResponse.json({ error: "Ukuran gambar maksimal 5 MB." }, { status: 400 });
+    const maksByte = jenis === "profil" ? MAKS_BYTE_PROFIL : MAKS_BYTE_ARTIKEL;
+    if (file.size > maksByte) {
+      return NextResponse.json(
+        {
+          error:
+            jenis === "profil"
+              ? "Ukuran foto profil maksimal 2 MB."
+              : "Ukuran gambar maksimal 5 MB.",
+        },
+        { status: 400 },
+      );
     }
 
     const ekstensi =
@@ -55,7 +82,8 @@ export async function POST(request: Request) {
           : file.type === "image/webp"
             ? "webp"
             : "gif";
-    const nama = `artikel/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ekstensi}`;
+    const folder = jenis === "profil" ? "profil" : "artikel";
+    const nama = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ekstensi}`;
     const bucket = process.env.SUPABASE_STORAGE_BUCKET ?? "artikel";
 
     const bytes = Buffer.from(await file.arrayBuffer());
