@@ -6,10 +6,37 @@ import { getSession, signIn } from "next-auth/react";
 import Link from "next/link";
 import { bolehMasukAdmin } from "@/lib/nav";
 
+/** Spinner putih kecil untuk tombol saat autentikasi berlangsung. */
+function Spinner() {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 24 24"
+      fill="none"
+      className="h-4 w-4 animate-spin"
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+        className="opacity-25"
+      />
+      <path
+        fill="currentColor"
+        className="opacity-90"
+        d="M4 12a8 8 0 0 1 8-8v4a4 4 0 0 0-4 4H4z"
+      />
+    </svg>
+  );
+}
+
 /**
  * Formulir masuk (Credentials + langkah 2FA) — dikirim ke endpoint NextAuth.
  * Setelah sukses: Admin/Editor langsung diarahkan ke /admin, kader ke
- * callbackUrl yang aman atau /dasbor.
+ * callbackUrl yang aman atau /dasbor. Saat memeriksa, tombol memuat spinner
+ * + disabled (anti double-click) + aria-busy.
  */
 export function LoginForm() {
   const router = useRouter();
@@ -127,8 +154,10 @@ export function LoginForm() {
       <button
         type="submit"
         disabled={memuat || (langkahOtp && otp.trim().length === 0)}
-        className="w-full bg-gmnimerah-500 px-5 py-3 font-sans text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-gmnimerah-600 disabled:opacity-50"
+        aria-busy={memuat}
+        className="inline-flex w-full items-center justify-center gap-2.5 bg-gmnimerah-500 px-5 py-3 font-sans text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-gmnimerah-600 disabled:cursor-not-allowed disabled:opacity-50"
       >
+        {memuat && <Spinner />}
         {memuat
           ? "Memeriksa..."
           : langkahOtp

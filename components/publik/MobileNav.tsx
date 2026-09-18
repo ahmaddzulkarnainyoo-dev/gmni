@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { bolehMasukAdmin, jalurAktif } from "@/lib/nav";
+import { TombolKeluar } from "@/components/ui/TombolKeluar";
 
 type NavItem = { label: string; href: string };
 type KatItem = { label: string; slug: string };
@@ -120,9 +121,7 @@ export function MobileNav({
                       Admin
                     </Link>
                   )}
-                  <Link href="/api/auth/signout?callbackUrl=/login" className="rounded-sm bg-red-600 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-white transition-colors hover:bg-red-700">
-                    Keluar
-                  </Link>
+                  <TombolKeluar variant="tombol" />
                 </>
               ) : (
                 <>

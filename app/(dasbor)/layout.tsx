@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requireAuthUser } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
+import { DasborDrawer } from "@/components/dasbor/DasborDrawer";
+import { TombolKeluar } from "@/components/ui/TombolKeluar";
 
 // Named export selain default/metadata dilarang Next 16 di layout - konstanta lokal.
 const MENU_DASBOR: Array<{ label: string; href: string }> = [
@@ -24,7 +26,9 @@ export default async function DasborLayout({
     <div className="flex min-h-screen flex-col">
       <header className="bg-hitam-900 text-white">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-3 px-4">
-          <LogoGMNI warne="putih" className="h-8 w-8" />
+          {/* Drawer mobile (hamburger + breadcrumb) — tersembunyi di md ke atas */}
+          <DasborDrawer menu={MENU_DASBOR} namaKader={user.name ?? "Kader"} />
+          <LogoGMNI warne="putih" className="hidden h-8 w-8 md:block" />
           <Link href="/dasbor" className="font-serif text-lg font-bold">
             info{" "}
             <span className="italic text-gmnimerah-400">Marhaen</span>
@@ -60,12 +64,7 @@ export default async function DasborLayout({
             <span className="mt-4 border-t border-hitam-200 pt-3 font-mono text-[11px] uppercase tracking-widest text-hitam-400">
               Masuk sebagai {user.name}
             </span>
-            <Link
-              href="/api/auth/signout?callbackUrl=/login"
-              className="mt-2 border-l-2 border-transparent px-3 py-2 font-sans text-sm font-medium text-gmnimerah-600 transition-colors hover:border-gmnimerah-500 hover:bg-white"
-            >
-              Keluar
-            </Link>
+            <TombolKeluar variant="link-hari" className="mt-2" />
           </nav>
         </aside>
         <div className="min-w-0 flex-1">{children}</div>

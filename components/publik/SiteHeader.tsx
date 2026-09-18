@@ -12,6 +12,7 @@ import { MobileNav } from "@/components/publik/MobileNav";
 import { NavDesktop } from "@/components/publik/NavDesktop";
 import { TickerBerita } from "@/components/publik/TickerBerita";
 import { SlotIklanHeader } from "@/components/publik/SlotIklanHeader";
+import { TombolKeluar } from "@/components/ui/TombolKeluar";
 import { bolehMasukAdmin } from "@/lib/nav";
 import { prisma } from "@/lib/prisma";
 
@@ -71,12 +72,7 @@ export async function SiteHeader() {
                     Admin
                   </Link>
                 )}
-                <Link
-                  href="/api/auth/signout?callbackUrl=/login"
-                  className="inline-flex min-h-7 items-center rounded-sm border border-white/30 px-2.5 py-1 text-[10px] text-kertas-200 transition-colors hover:border-white hover:text-white"
-                >
-                  Keluar
-                </Link>
+                <TombolKeluar variant="link-terang" />
               </>
             ) : (
               <>

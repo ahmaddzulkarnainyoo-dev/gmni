@@ -3,6 +3,7 @@ import { requireRole } from "@/lib/session";
 import { LogoGMNI } from "@/components/brand/LogoGMNI";
 import { KickerLabel } from "@/components/ui/KickerLabel";
 import { AdminDrawer } from "@/components/admin/AdminDrawer";
+import { TombolKeluar } from "@/components/ui/TombolKeluar";
 
 // Named export selain default/metadata dilarang Next 16 di layout — konstanta lokal.
 const MENU_ADMIN: Array<{
@@ -66,12 +67,7 @@ export default async function AdminLayout({
           >
             Lihat Situs
           </Link>
-          <Link
-            href="/api/auth/signout?callbackUrl=/login"
-            className="font-mono text-[11px] uppercase tracking-widest text-kertas-300 hover:text-gmnimerah-400"
-          >
-            Keluar
-          </Link>
+          <TombolKeluar variant="link-terang" />
         </div>
       </header>
 
