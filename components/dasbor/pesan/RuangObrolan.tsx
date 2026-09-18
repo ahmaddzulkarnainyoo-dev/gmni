@@ -36,10 +36,11 @@ type KaderBaru = {
   fotoProfil?: string | null;
 };
 
-// Polling ringan ala plan 3.1: chat aktif 5 dtk, daftar 15 dtk, hanya saat
-// tab terlihat (hemat kuota serverless).
+// Polling ringan ala plan 3.1: chat aktif 5 dtk, daftar 10 dtk, hanya saat
+// tab terlihat (hemat kuota serverless) + refresh langsung saat tab kembali
+// aktif agar pesan/room baru terlihat segera, bukan menunggu interval.
 const INTERVAL_CHAT_MS = 5000;
-const INTERVAL_DAFTAR_MS = 15000;
+const INTERVAL_DAFTAR_MS = 10000;
 const AWALAN_TEMP = "baru:";
 
 function gabungPesan(lama: PesanItem[], tambahan: PesanItem[]): PesanItem[] {
@@ -99,6 +100,7 @@ export function RuangObrolan({
   const [pesan, setPesan] = useState<PesanItem[]>([]);
   const [memuatChat, setMemuatChat] = useState(false);
   const [erorRiwayat, setErorRiwayat] = useState<string | null>(null);
+  const [erorDaftar, setErorDaftar] = useState<string | null>(null);
   const cursorRef = useRef<string | null>(null);
   const aktifRef = useRef<string | null>(null);
   const roomRef = useRef<RoomItem[]>(awal);
@@ -149,11 +151,20 @@ export function RuangObrolan({
   const muatDaftar = useCallback(async () => {
     try {
       const res = await fetch("/api/pesan/percakapan");
-      if (!res.ok) return;
+      if (!res.ok) {
+        // Permukaan error: jangan diam-diam tampil kosong (terlihat seperti
+        // pesan "tidak sampai"). Polling berikutnya mencoba lagi otomatis.
+        setErorDaftar("Koneksi ke layanan pesan bermasalah. Mencoba lagi...");
+        return;
+      }
       const data = (await res.json()) as { percakapan?: RoomItem[] };
-      if (!data.percakapan) return;
+      if (!data.percakapan) {
+        setErorDaftar("Balasan server tidak valid. Mencoba lagi...");
+        return;
+      }
+      setErorDaftar(null);
       // Merge, bukan replace penuh: room sementara "baru:" jangan sampai
-      // hilang digulung polling 15 detik (penyebab panel kanan kosong).
+      // hilang digulung polling 10 detik (penyebab panel kanan kosong).
       const { hasil, tempKeAsli } = gabungRoom(roomRef.current, data.percakapan);
       roomRef.current = hasil;
       setRoom(hasil);
@@ -164,7 +175,7 @@ export function RuangObrolan({
         void muatRiwayat(idAsli);
       }
     } catch {
-      /* abaikan - polling berikutnya mencoba lagi */
+      setErorDaftar("Tidak dapat menghubungi server pesan. Mencoba lagi...");
     }
   }, [muatRiwayat]);
 
@@ -190,6 +201,26 @@ export function RuangObrolan({
     }, INTERVAL_DAFTAR_MS);
     return () => clearInterval(t);
   }, [muatDaftar]);
+
+  // Tab kembali terlihat / window fokus: muat daftar (dan chat aktif) SEKARANG,
+  // jangan menunggu interval — room/pesan baru langsung tampil (gejala
+  // "pesan tidak sampai" selama tab hidden).
+  useEffect(() => {
+    const segarkan = () => {
+      if (document.hidden) return;
+      void muatDaftar();
+      const aktif = aktifRef.current;
+      if (aktif && !aktif.startsWith(AWALAN_TEMP)) {
+        void muatRiwayat(aktif, true);
+      }
+    };
+    document.addEventListener("visibilitychange", segarkan);
+    window.addEventListener("focus", segarkan);
+    return () => {
+      document.removeEventListener("visibilitychange", segarkan);
+      window.removeEventListener("focus", segarkan);
+    };
+  }, [muatDaftar, muatRiwayat]);
 
   function handleTerkirim(p: PesanItem) {
     setPesan((lama) => gabungPesan(lama, [p]));
@@ -311,6 +342,7 @@ export function RuangObrolan({
         onPilih={setAktifId}
         onMulaiBaru={handleMulaiBaru}
         tersembunyiMobile={aktifId !== null}
+        eror={erorDaftar}
       />
       <div className={`flex-1 ${aktifId === null ? "hidden md:block" : "block"}`}>
         {aktifBaru ? (

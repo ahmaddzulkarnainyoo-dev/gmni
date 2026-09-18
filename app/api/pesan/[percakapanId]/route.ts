@@ -72,22 +72,31 @@ export async function GET(
         })
       ).reverse();
 
-  // Tandai dibaca: pesan lawan TERKIRIM → DIBACA + majukan cursor saya.
-  const sekarang = new Date();
-  await prisma.$transaction([
-    prisma.pesan.updateMany({
-      where: {
-        percakapanId,
-        pengirimId: { not: user.id },
-        status: "TERKIRIM",
-      },
-      data: { status: "DIBACA" },
-    }),
-    prisma.anggotaPercakapan.update({
-      where: { percakapanId_userId: { percakapanId, userId: user.id } },
-      data: { terakhirDibacaAt: sekarang },
-    }),
-  ]);
+  // Tandai dibaca (hemat transaksi): saat polling, transaksi penanda-baca hanya
+  // dijalankan bila benar-benar ada pesan lawan TERKIRIM di batch; buka room
+  // (non-polling) selalu menandai penuh — resi pengirim tetap akurat.
+  const perluTandai = modePolling
+    ? pesan.some(
+        (p) => p.pengirimId !== user.id && p.status === "TERKIRIM",
+      )
+    : true;
+  if (perluTandai) {
+    const sekarang = new Date();
+    await prisma.$transaction([
+      prisma.pesan.updateMany({
+        where: {
+          percakapanId,
+          pengirimId: { not: user.id },
+          status: "TERKIRIM",
+        },
+        data: { status: "DIBACA" },
+      }),
+      prisma.anggotaPercakapan.update({
+        where: { percakapanId_userId: { percakapanId, userId: user.id } },
+        data: { terakhirDibacaAt: sekarang },
+      }),
+    ]);
+  }
 
   return NextResponse.json({ pesan });
 }

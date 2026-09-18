@@ -163,8 +163,22 @@ export async function POST(request: Request) {
       anggota: { create: [{ userId: user.id }, { userId: targetId }] },
       pesan: { create: [{ pengirimId: user.id, isi }] },
     },
-    include: { pesan: { orderBy: { tanggal: "asc" }, take: 1 } },
+    include: {
+      pesan: { orderBy: { tanggal: "asc" }, take: 1 },
+      anggota: { select: { userId: true } },
+    },
   });
+
+  // Observability: room 1-on-1 wajib tepat 2 anggota; log bila tidak (data
+  // tetap tersimpan — asersi hanya untuk tracing insiden "pesan tidak sampai").
+  if (dibuat.anggota.length !== 2) {
+    console.error("[pesan] room baru anggota != 2", {
+      percakapanId: dibuat.id,
+      pengirim: user.id,
+      target: targetId,
+      jumlah: dibuat.anggota.length,
+    });
+  }
 
   // Aktivitas harian pengirim (best-effort, blueprint 8.4).
   catatAktivitas(user.id, "AKTIF_HARIAN")

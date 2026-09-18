@@ -171,6 +171,7 @@ export function JendelaChat({
         percakapanId={percakapanId}
         userId={userId}
         onTerkirim={onTerkirim}
+        modeTemp={percakapanId === "baru"}
       />
     </section>
   );

@@ -36,6 +36,7 @@ export function DaftarPercakapan({
   onPilih,
   onMulaiBaru,
   tersembunyiMobile,
+  eror,
 }: {
   room: RoomItem[];
   aktifId: string | null;
@@ -43,6 +44,8 @@ export function DaftarPercakapan({
   onPilih: (id: string) => void;
   onMulaiBaru: (kader: KaderItem) => void;
   tersembunyiMobile: boolean;
+  /** Pesan kegagalan koneksi layanan pesan (null = tidak ada error). */
+  eror?: string | null;
 }) {
   const [cari, setCari] = useState("");
   const [hasil, setHasil] = useState<KaderItem[]>([]);
@@ -129,6 +132,15 @@ export function DaftarPercakapan({
           </ul>
         )}
       </div>
+
+      {eror && (
+        <p
+          role="alert"
+          className="border-b-2 border-gmnimerah-500 bg-gmnimerah-50 px-3 py-2 text-xs font-semibold text-gmnimerah-700"
+        >
+          {eror}
+        </p>
+      )}
 
       <ul className="max-h-[60vh] flex-1 divide-y divide-hitam-100 overflow-y-auto md:max-h-none">
         {room.length === 0 ? (

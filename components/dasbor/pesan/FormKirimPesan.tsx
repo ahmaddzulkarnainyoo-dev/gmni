@@ -19,11 +19,18 @@ export function FormKirimPesan({
   userId,
   onTerkirim,
   nonaktif,
+  modeTemp = false,
 }: {
   percakapanId: string | null;
   userId: string;
   onTerkirim: (p: PesanItem) => void;
   nonaktif?: boolean;
+  /**
+   * Mode room sementara ("baru:"): komponen TIDAK mem-fetch /api/pesan sendiri
+   * (mencegah double-POST 404 "Percakapan tidak ditemukan"); pemanggil
+   * (MulaiPercakapanBaru) yang mem-POST { penerimaId, isi } via onTerkirim.
+   */
+  modeTemp?: boolean;
 }) {
   const [isi, setIsi] = useState("");
   const [memuat, setMemuat] = useState(false);
@@ -51,6 +58,11 @@ export function FormKirimPesan({
     };
     onTerkirim(temp);
     setIsi("");
+    // Mode room sementara: POST dilakukan pemanggil (bukan di sini).
+    if (modeTemp) {
+      setMemuat(false);
+      return;
+    }
     try {
       const res = await fetch("/api/pesan", {
         method: "POST",

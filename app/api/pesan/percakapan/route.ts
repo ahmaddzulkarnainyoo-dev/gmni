@@ -55,42 +55,56 @@ export async function GET(request: Request) {
     });
   }
 
-  const keanggotaan = await prisma.anggotaPercakapan.findMany({
-    where: { userId: user.id },
-    orderBy: { percakapan: { pesanTerakhirAt: "desc" } },
-    take: 50,
-    include: {
-      percakapan: {
-        include: {
-          anggota: {
-            where: { userId: { not: user.id } },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  namaLengkap: true,
-                  username: true,
-                  fotoProfil: true,
-                  statusAkun: true,
+  const keanggotaan = await prisma.anggotaPercakapan
+    .findMany({
+      where: { userId: user.id },
+      orderBy: { percakapan: { pesanTerakhirAt: "desc" } },
+      take: 50,
+      include: {
+        percakapan: {
+          include: {
+            anggota: {
+              where: { userId: { not: user.id } },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    namaLengkap: true,
+                    username: true,
+                    fotoProfil: true,
+                    statusAkun: true,
+                  },
                 },
               },
             },
-          },
-          pesan: {
-            orderBy: { tanggal: "desc" },
-            take: 1,
-            select: {
-              id: true,
-              isi: true,
-              status: true,
-              tanggal: true,
-              pengirimId: true,
+            pesan: {
+              orderBy: { tanggal: "desc" },
+              take: 1,
+              select: {
+                id: true,
+                isi: true,
+                status: true,
+                tanggal: true,
+                pengirimId: true,
+              },
             },
           },
         },
       },
-    },
-  });
+    })
+    .catch((e: unknown) => {
+      console.error("[pesan] gagal memuat daftar percakapan", e);
+      return null;
+    });
+
+  // Gagal query → 503 eksplisit (bukan daftar kosong yang terlihat seperti
+  // "pesan tidak sampai"; klien menampilkan banner dari respons ini).
+  if (!keanggotaan) {
+    return NextResponse.json(
+      { error: "Layanan pesan sedang bermasalah. Coba lagi sebentar." },
+      { status: 503 },
+    );
+  }
 
   const percakapan = await Promise.all(
     keanggotaan.map(async (a) => {
